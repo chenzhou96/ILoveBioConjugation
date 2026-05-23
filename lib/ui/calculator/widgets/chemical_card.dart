@@ -24,6 +24,7 @@ class ChemicalCard extends StatelessWidget {
   });
 
   void _loadTemplate(SubstrateTemplate t) {
+    onFieldChanged('name', t.name);
     if (t.molecularWeight != null) onFieldChanged('mw', t.molecularWeight.toString());
     onFieldChanged('mwUnit', t.mwUnit);
     if (t.storageConcentration != null) onFieldChanged('storageConc', t.storageConcentration.toString());
@@ -55,103 +56,121 @@ class ChemicalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      title: input.name.isEmpty ? (isMain ? '主底物' : '副底物${index + 1}') : input.name,
-      isMain: isMain,
-      padding: const EdgeInsets.all(8),
-      trailing: IconButton(
-        icon: const Icon(Icons.bookmark_outline, size: 14),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-        tooltip: '模板',
-        onPressed: () async {
-          final template = await showTemplatePicker(
-            context,
-            currentValues: _currentAsTemplate(),
-          );
-          if (template != null) {
-            _loadTemplate(template);
-          }
-        },
-      ),
+    final title = input.name.isEmpty ? (isMain ? '主底物' : '副底物${index + 1}') : input.name;
+    final enabled = isMain || input.enabled;
+
+    final trailing = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        if (!isMain) ...[
-          Row(
-            children: [
-              Text(
-                input.enabled ? '状态：已启用' : '状态：未启用',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: input.enabled ? AppColors.successFg : AppColors.muted,
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: onToggle,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  input.enabled ? '停用' : '启用',
-                  style: const TextStyle(fontSize: 10),
-                ),
-              ),
-            ],
+        InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: () async {
+            final template = await showTemplatePicker(
+              context,
+              currentValues: _currentAsTemplate(),
+            );
+            if (template != null) {
+              _loadTemplate(template);
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.bookmark_outline, size: 12, color: AppColors.muted),
+                SizedBox(width: 2),
+                Text('模板', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
+        ),
+        if (!isMain) ...[
+          const SizedBox(width: 6),
+          if (input.enabled)
+            InkWell(
+              onTap: onToggle,
+              child: const Text('停用', style: TextStyle(fontSize: 9, color: AppColors.errorFg)),
+            )
+          else
+            InkWell(
+              onTap: onToggle,
+              child: const Text('启用', style: TextStyle(fontSize: 9, color: AppColors.primary)),
+            ),
         ],
-        ChemicalFieldRow(
-          label: '名称',
-          value: input.name,
-          onChanged: (v) => onFieldChanged('name', v),
-          entryWidth: 120,
-        ),
-        ChemicalFieldRow(
-          label: '分子量',
-          value: input.mw,
-          onChanged: (v) => onFieldChanged('mw', v),
-          unit: input.mwUnit,
-          unitValues: CalculatorNotifier.mwUnits,
-          onUnitChanged: (v) => onFieldChanged('mwUnit', v),
-        ),
-        ChemicalFieldRow(
-          label: '母液浓度',
-          value: input.storageConc,
-          onChanged: (v) => onFieldChanged('storageConc', v),
-          unit: input.storageUnit,
-          unitValues: CalculatorNotifier.storageUnits,
-          onUnitChanged: (v) => onFieldChanged('storageUnit', v),
-        ),
-        ChemicalFieldRow(
-          label: '反应浓度',
-          value: input.finalConc,
-          onChanged: (v) => onFieldChanged('finalConc', v),
-          unit: input.finalUnit,
-          unitValues: CalculatorNotifier.storageUnits,
-          onUnitChanged: (v) => onFieldChanged('finalUnit', v),
-        ),
-        ChemicalFieldRow(
-          label: '投料比',
-          value: input.reactionRatio,
-          onChanged: (v) => onFieldChanged('reactionRatio', v),
-          entryWidth: 100,
-        ),
-        ChemicalFieldRow(
-          label: '母液体积',
-          value: input.storageVolume,
-          onChanged: (v) => onFieldChanged('storageVolume', v),
-          unit: input.storageVolumeUnit,
-          unitValues: CalculatorNotifier.volumeUnits,
-          onUnitChanged: (v) => onFieldChanged('storageVolumeUnit', v),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          '可只填部分条件，系统会自动求解未知变量',
-          style: TextStyle(fontSize: 9, color: AppColors.muted),
-        ),
       ],
+    );
+
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.5,
+      child: SectionCard(
+        title: title,
+        isMain: isMain,
+        accentColor: isMain ? AppColors.mainRed : AppColors.secondaryBlue,
+        trailing: trailing,
+        padding: const EdgeInsets.all(10),
+        children: [
+          ChemicalFieldRow(
+            label: '名称',
+            value: input.name,
+            onChanged: (v) => onFieldChanged('name', v),
+            entryWidth: 120,
+            hint: '底物名称',
+            readOnly: !enabled,
+          ),
+          ChemicalFieldRow(
+            label: '分子量',
+            value: input.mw,
+            onChanged: (v) => onFieldChanged('mw', v),
+            unit: input.mwUnit,
+            unitValues: CalculatorNotifier.mwUnits,
+            onUnitChanged: (v) => onFieldChanged('mwUnit', v),
+            hint: 'MW',
+            readOnly: !enabled,
+          ),
+          ChemicalFieldRow(
+            label: '母液浓度',
+            value: input.storageConc,
+            onChanged: (v) => onFieldChanged('storageConc', v),
+            unit: input.storageUnit,
+            unitValues: CalculatorNotifier.storageUnits,
+            onUnitChanged: (v) => onFieldChanged('storageUnit', v),
+            hint: '浓度',
+            readOnly: !enabled,
+          ),
+          ChemicalFieldRow(
+            label: '反应浓度',
+            value: input.finalConc,
+            onChanged: (v) => onFieldChanged('finalConc', v),
+            unit: input.finalUnit,
+            unitValues: CalculatorNotifier.storageUnits,
+            onUnitChanged: (v) => onFieldChanged('finalUnit', v),
+            hint: '终浓度',
+            readOnly: !enabled,
+          ),
+          ChemicalFieldRow(
+            label: '投料比',
+            value: input.reactionRatio,
+            onChanged: (v) => onFieldChanged('reactionRatio', v),
+            hint: '比值',
+            readOnly: !enabled,
+          ),
+          ChemicalFieldRow(
+            label: '母液体积',
+            value: input.storageVolume,
+            onChanged: (v) => onFieldChanged('storageVolume', v),
+            unit: input.storageVolumeUnit,
+            unitValues: CalculatorNotifier.volumeUnits,
+            onUnitChanged: (v) => onFieldChanged('storageVolumeUnit', v),
+            hint: '体积',
+            readOnly: !enabled,
+          ),
+        ],
+      ),
     );
   }
 }

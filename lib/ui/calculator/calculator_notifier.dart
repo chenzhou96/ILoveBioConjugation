@@ -5,6 +5,7 @@ import 'package:ilovebioconjunction/core/validators.dart';
 import 'package:ilovebioconjunction/data/calculation_history.dart';
 import 'package:ilovebioconjunction/data/app_database.dart';
 import 'package:ilovebioconjunction/ui/calculator/state.dart';
+import 'package:ilovebioconjunction/ui/history/history_screen.dart';
 
 /// Provider for the calculator state.
 final calculatorProvider =
@@ -254,6 +255,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           : 0,
       substrates: substrateResults,
     );
+    ref.invalidate(historyProvider);
   }
 
   // ── copy result ──────────────────────────────────────────────────────

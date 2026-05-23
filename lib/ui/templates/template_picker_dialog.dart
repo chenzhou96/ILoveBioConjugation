@@ -4,8 +4,6 @@ import 'package:ilovebioconjunction/data/substrate_template.dart';
 import 'package:ilovebioconjunction/theme/app_colors.dart';
 import 'package:ilovebioconjunction/ui/templates/template_notifier.dart';
 
-/// Shows a dialog for picking or saving substrate templates.
-/// Returns the selected [SubstrateTemplate], or null if cancelled.
 Future<SubstrateTemplate?> showTemplatePicker(
   BuildContext context, {
   SubstrateTemplate? currentValues,
@@ -25,33 +23,23 @@ class _TemplatePickerDialog extends ConsumerStatefulWidget {
 }
 
 class _TemplatePickerDialogState extends ConsumerState<_TemplatePickerDialog> {
-  final _nameController = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
   Future<void> _saveCurrent() async {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) return;
-
     final t = widget.currentValues;
+    if (t == null || t.name.trim().isEmpty) return;
+
     await ref.read(templateNotifierProvider.notifier).saveTemplate(
-      name: name,
-      molecularWeight: t?.molecularWeight,
-      mwUnit: t?.mwUnit ?? 'Da',
-      storageConcentration: t?.storageConcentration,
-      storageUnit: t?.storageUnit ?? 'mg/mL',
-      defaultFinalConc: t?.defaultFinalConc,
-      defaultFinalUnit: t?.defaultFinalUnit ?? 'mg/mL',
-      defaultReactionRatio: t?.defaultReactionRatio,
+      name: t.name.trim(),
+      molecularWeight: t.molecularWeight,
+      mwUnit: t.mwUnit,
+      storageConcentration: t.storageConcentration,
+      storageUnit: t.storageUnit,
+      defaultFinalConc: t.defaultFinalConc,
+      defaultFinalUnit: t.defaultFinalUnit,
+      defaultReactionRatio: t.defaultReactionRatio,
     );
-    _nameController.clear();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('模板已保存'), duration: Duration(seconds: 1)),
+        SnackBar(content: Text('已保存模板: ${t.name.trim()}'), duration: const Duration(seconds: 1)),
       );
     }
   }
@@ -63,99 +51,115 @@ class _TemplatePickerDialogState extends ConsumerState<_TemplatePickerDialog> {
     return AlertDialog(
       title: const Text('底物模板', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
       content: SizedBox(
-        width: 320,
+        width: 520,
+        height: 400,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Save current as template
             if (widget.currentValues != null) ...[
-              const Text('保存当前为模板', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
+              const Text(
+                '将当前卡片的参数保存为模板，模板名称自动取底物名称',
+                style: TextStyle(fontSize: 10, color: AppColors.muted),
+              ),
+              const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 32,
-                      child: TextField(
-                        controller: _nameController,
-                        style: const TextStyle(fontSize: 12),
-                        decoration: const InputDecoration(
-                          hintText: '模板名称',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
+                  Text(
+                    '名称: ${widget.currentValues!.name.trim().isEmpty ? '(请先在卡片中填写底物名称)' : widget.currentValues!.name.trim()}',
+                    style: const TextStyle(fontSize: 12),
                   ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: _saveCurrent,
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: widget.currentValues!.name.trim().isEmpty ? null : _saveCurrent,
+                    icon: const Icon(Icons.save, size: 14),
+                    label: const Text('保存', style: TextStyle(fontSize: 11)),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       minimumSize: Size.zero,
                     ),
-                    child: const Text('保存', style: TextStyle(fontSize: 11)),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               const Divider(),
             ],
-            // Template list
-            const Text('已保存的模板', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Flexible(
+            Row(
+              children: [
+                const Text('已保存的模板', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 6),
+                const Text('点击加载', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Expanded(
               child: templatesAsync.when(
                 data: (templates) {
                   if (templates.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('暂无模板', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                    return const Center(
+                      child: Text('暂无模板，请先填写底物名称后保存', style: TextStyle(fontSize: 12, color: AppColors.muted)),
                     );
                   }
-                  return ListView.builder(
-                    shrinkWrap: true,
+                  return GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 3.5,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 4,
+                    ),
                     itemCount: templates.length,
                     itemBuilder: (context, index) {
                       final t = templates[index];
                       final storageText = t.storageConcentration != null
                           ? '${t.storageConcentration} ${t.storageUnit}'
-                          : 'N/A';
+                          : t.storageUnit;
                       final mwText = t.molecularWeight != null
-                          ? '${t.molecularWeight} ${t.mwUnit}'
-                          : 'N/A';
+                          ? 'MW ${t.molecularWeight} ${t.mwUnit}'
+                          : '';
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        child: ListTile(
-                          dense: true,
-                          title: Text(t.name, style: const TextStyle(fontSize: 13)),
-                          subtitle: Text(
-                            'MW: $mwText  |  母液: $storageText',
-                            style: const TextStyle(fontSize: 10, color: AppColors.muted),
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => Navigator.of(context).pop(t),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.border),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, size: 16),
-                            onPressed: () async {
-                              if (t.id != null) {
-                                await ref.read(templateNotifierProvider.notifier).deleteTemplate(t.id!);
-                              }
-                            },
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(t.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      [storageText, mwText].where((s) => s.isNotEmpty).join('  |  '),
+                                      style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  if (t.id != null) {
+                                    await ref.read(templateNotifierProvider.notifier).deleteTemplate(t.id!);
+                                  }
+                                },
+                                child: const Icon(Icons.close, size: 14, color: AppColors.muted),
+                              ),
+                            ],
                           ),
-                          onTap: () => Navigator.of(context).pop(t),
                         ),
                       );
                     },
                   );
                 },
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
+                loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 error: (e, _) => Text('加载失败: $e', style: const TextStyle(fontSize: 12, color: AppColors.errorFg)),
               ),
             ),
@@ -165,7 +169,7 @@ class _TemplatePickerDialogState extends ConsumerState<_TemplatePickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消', style: TextStyle(fontSize: 12)),
+          child: const Text('关闭', style: TextStyle(fontSize: 12)),
         ),
       ],
     );

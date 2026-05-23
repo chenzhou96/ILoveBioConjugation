@@ -11,20 +11,32 @@ class ResultMetricsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: _MetricCard(title: '最终反应体积', value: metrics.totalVolume),
+        _MetricCard(
+          icon: Icons.science_outlined,
+          label: '最终反应体积',
+          value: metrics.totalVolume,
+          color: AppColors.primary,
         ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _MetricCard(title: '母液总体积', value: metrics.stockVolume),
+        const SizedBox(width: 8),
+        _MetricCard(
+          icon: Icons.inventory_2_outlined,
+          label: '母液总体积',
+          value: metrics.stockVolume,
+          color: AppColors.secondaryBlue,
         ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _MetricCard(title: '补加溶剂体积', value: metrics.diluentVolume),
+        const SizedBox(width: 8),
+        _MetricCard(
+          icon: Icons.water_drop_outlined,
+          label: '补加溶剂体积',
+          value: metrics.diluentVolume,
+          color: AppColors.success,
         ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _MetricCard(title: '启用底物数量', value: metrics.substrateCount),
+        const SizedBox(width: 8),
+        _MetricCard(
+          icon: Icons.biotech_outlined,
+          label: '启用底物数量',
+          value: metrics.substrateCount,
+          color: AppColors.accent,
         ),
       ],
     );
@@ -32,34 +44,46 @@ class ResultMetricsRow extends StatelessWidget {
 }
 
 class _MetricCard extends StatelessWidget {
-  final String title;
+  final IconData icon;
+  final String label;
   final String value;
+  final Color color;
 
-  const _MetricCard({required this.title, required this.value});
+  const _MetricCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: AppColors.metricBg,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.text,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: AppColors.muted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -43,10 +43,9 @@ class HistoryScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final record = records[index];
               final ratioLabel = record.ratioType ? '摩尔比' : '质量比';
-              final vol = record.reactionVolume != null
-                  ? '${record.reactionVolume!.toStringAsFixed(3)} ${record.reactionVolumeUnit}'
-                  : 'N/A';
+              final vol = _formatVolumeSmart(record.reactionVolume, record.reactionVolumeUnit);
               final date = record.createdAt.substring(0, 19).replaceAll('T', ' ');
+              final names = record.substrates.map((s) => s.name).join('、');
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -56,8 +55,10 @@ class HistoryScreen extends ConsumerWidget {
                     style: const TextStyle(fontSize: 13),
                   ),
                   subtitle: Text(
-                    '${record.substrates.length} 个底物',
+                    names,
                     style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, size: 18),
@@ -83,4 +84,14 @@ class HistoryScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _formatVolumeSmart(double? volMl, String unit) {
+  if (volMl == null) return 'N/A';
+  final absV = volMl.abs();
+  if (absV >= 1000) return '${(volMl / 1000).toStringAsFixed(2)} L';
+  if (absV >= 1) return '${volMl.toStringAsFixed(2)} mL';
+  if (absV >= 0.001) return '${(volMl * 1000).toStringAsFixed(2)} uL';
+  if (absV >= 0.000001) return '${(volMl * 1000000).toStringAsFixed(2)} nL';
+  return '${(volMl * 1000000000).toStringAsFixed(2)} pL';
 }

@@ -10,28 +10,34 @@ final _router = GoRouter(
   routes: [
     ShellRoute(
       builder: (context, state, child) => Scaffold(
-        body: child,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex(state.uri),
-          onDestinationSelected: (index) {
-            switch (index) {
-              case 0:
-                context.go('/');
-              case 1:
-                context.go('/history');
-            }
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.science_outlined),
-              selectedIcon: Icon(Icons.science),
-              label: '计算器',
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _selectedIndex(state.uri),
+              onDestinationSelected: (index) {
+                switch (index) {
+                  case 0:
+                    context.go('/');
+                  case 1:
+                    context.go('/history');
+                }
+              },
+              labelType: NavigationRailLabelType.all,
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.science_outlined),
+                  selectedIcon: Icon(Icons.science),
+                  label: Text('计算器'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.history_outlined),
+                  selectedIcon: Icon(Icons.history),
+                  label: Text('历史记录'),
+                ),
+              ],
             ),
-            NavigationDestination(
-              icon: Icon(Icons.history_outlined),
-              selectedIcon: Icon(Icons.history),
-              label: '历史记录',
-            ),
+            const VerticalDivider(width: 1),
+            Expanded(child: child),
           ],
         ),
       ),

@@ -127,11 +127,8 @@ void main() {
     });
 
     test('throws on too many secondaries', () {
-      final makeChem = (String name) => Chemical(
-        unitCoefficient: 0,
-        name: name,
-        storageConcMass: 1,
-      );
+      Chemical makeChem(String name) =>
+          Chemical(unitCoefficient: 0, name: name, storageConcMass: 1);
 
       expect(
         () => Reaction(
@@ -157,10 +154,7 @@ void main() {
       );
       // No reaction volume, no storage volumes, no ratios → can't solve
       expect(
-        () => Reaction(
-          ratioType: false,
-          substrateMain: main,
-        ),
+        () => Reaction(ratioType: false, substrateMain: main),
         throwsArgumentError,
       );
     });

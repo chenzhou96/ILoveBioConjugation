@@ -48,15 +48,9 @@ class HistoryDetailScreen extends ConsumerWidget {
           }
 
           final ratioLabel = record.ratioType ? '摩尔比' : '质量比';
-          final volStr = record.reactionVolume != null
-              ? '${record.reactionVolume!.toStringAsFixed(4)} ${record.reactionVolumeUnit}'
-              : 'N/A';
-          final stockStr = record.totalStockVolume != null
-              ? '${record.totalStockVolume!.toStringAsFixed(4)} mL'
-              : 'N/A';
-          final diluentStr = record.diluentVolume != null
-              ? '${record.diluentVolume!.toStringAsFixed(4)} mL'
-              : 'N/A';
+          final volStr = _fmtVol(record.reactionVolume);
+          final stockStr = _fmtVol(record.totalStockVolume);
+          final diluentStr = _fmtVol(record.diluentVolume);
           final date = record.createdAt.substring(0, 19).replaceAll('T', ' ');
 
           return SingleChildScrollView(
@@ -64,7 +58,6 @@ class HistoryDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Summary card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -83,7 +76,6 @@ class HistoryDetailScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Substrate table
                 const Text('底物详情', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 SingleChildScrollView(
@@ -102,21 +94,17 @@ class HistoryDetailScreen extends ConsumerWidget {
                       DataColumn(label: Text('投料比', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
                     ],
                     rows: record.substrates.map((s) {
-                      final mwStr = s.molecularWeight != null
-                          ? '${s.molecularWeight} ${s.mwUnit ?? "Da"}'
-                          : 'N/A';
+                      final mwStr = _fmtMw(s.molecularWeight, s.mwUnit);
                       final storageConcStr = s.storageConcMolar != null
-                          ? '${s.storageConcMolar!.toStringAsFixed(4)} mM'
+                          ? _fmtConc(s.storageConcMolar!, 'M')
                           : s.storageConcMass != null
-                              ? '${s.storageConcMass!.toStringAsFixed(4)} mg/mL'
+                              ? _fmtConc(s.storageConcMass!, 'g')
                               : 'N/A';
-                      final storageVolStr = s.storageVolume != null
-                          ? '${s.storageVolume!.toStringAsFixed(4)} mL'
-                          : 'N/A';
+                      final storageVolStr = _fmtVol(s.storageVolume);
                       final finalConcStr = s.finalConcMolar != null
-                          ? '${s.finalConcMolar!.toStringAsFixed(4)} mM'
+                          ? _fmtConc(s.finalConcMolar!, 'M')
                           : s.finalConcMass != null
-                              ? '${s.finalConcMass!.toStringAsFixed(4)} mg/mL'
+                              ? _fmtConc(s.finalConcMass!, 'g')
                               : 'N/A';
                       final ratioStr = s.reactionRatio != null
                           ? s.reactionRatio!.toStringAsFixed(4)
@@ -149,10 +137,7 @@ class HistoryDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-          ),
+          SizedBox(width: 100, child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted))),
           Expanded(child: Text(value, style: const TextStyle(fontSize: 12))),
         ],
       ),
@@ -162,5 +147,39 @@ class HistoryDetailScreen extends ConsumerWidget {
   void _restoreToCalculator(WidgetRef ref, CalculationHistory record) {
     final notifier = ref.read(calculatorProvider.notifier);
     notifier.restoreFromHistory(record);
+  }
+}
+
+String _fmtVol(double? ml) {
+  if (ml == null) return 'N/A';
+  final v = ml.abs();
+  if (v >= 1000) return '${(ml / 1000).toStringAsFixed(2)} L';
+  if (v >= 1) return '${ml.toStringAsFixed(2)} mL';
+  if (v >= 0.001) return '${(ml * 1000).toStringAsFixed(2)} uL';
+  if (v >= 0.000001) return '${(ml * 1e6).toStringAsFixed(2)} nL';
+  return '${(ml * 1e9).toStringAsFixed(2)} pL';
+}
+
+String _fmtMw(double? da, String? unit) {
+  if (da == null) return 'N/A';
+  if (da >= 1000) return '${(da / 1000).toStringAsFixed(2)} kDa';
+  return '${da.toStringAsFixed(2)} Da';
+}
+
+String _fmtConc(double? value, String baseType) {
+  if (value == null) return 'N/A';
+  final v = value.abs();
+  if (baseType == 'M') {
+    if (v >= 1000) return '${(value / 1000).toStringAsFixed(2)} M';
+    if (v >= 1) return '${value.toStringAsFixed(2)} mM';
+    if (v >= 0.001) return '${(value * 1000).toStringAsFixed(2)} uM';
+    if (v >= 0.000001) return '${(value * 1e6).toStringAsFixed(2)} nM';
+    return '${(value * 1e9).toStringAsFixed(2)} pM';
+  } else {
+    if (v >= 1000) return '${(value / 1000).toStringAsFixed(2)} g/mL';
+    if (v >= 1) return '${value.toStringAsFixed(2)} mg/mL';
+    if (v >= 0.001) return '${(value * 1000).toStringAsFixed(2)} ug/mL';
+    if (v >= 0.000001) return '${(value * 1e6).toStringAsFixed(2)} ng/mL';
+    return '${(value * 1e9).toStringAsFixed(2)} pg/mL';
   }
 }
