@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
-import 'package:ilovebioconjunction/ui/calculator/state.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
+import 'package:ilovebioconjugation/ui/calculator/state.dart';
 
 class ResultMetricsRow extends StatelessWidget {
   final ResultMetrics metrics;

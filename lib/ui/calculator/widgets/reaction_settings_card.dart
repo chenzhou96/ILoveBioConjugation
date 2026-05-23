@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
-import 'package:ilovebioconjunction/ui/calculator/calculator_notifier.dart';
-import 'package:ilovebioconjunction/ui/shared/section_card.dart';
-import 'package:ilovebioconjunction/ui/shared/unit_dropdown.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
+import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
+import 'package:ilovebioconjugation/ui/shared/section_card.dart';
+import 'package:ilovebioconjugation/ui/shared/unit_dropdown.dart';
 
 class ReactionSettingsCard extends StatefulWidget {
   final String volume;

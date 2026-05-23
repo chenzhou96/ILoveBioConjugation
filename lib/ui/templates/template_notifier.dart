@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ilovebioconjunction/data/app_database.dart';
-import 'package:ilovebioconjunction/data/substrate_template.dart';
+import 'package:ilovebioconjugation/data/app_database.dart';
+import 'package:ilovebioconjugation/data/substrate_template.dart';
 
 final templateListProvider = FutureProvider<List<SubstrateTemplate>>((ref) async {
   final db = ref.read(appDatabaseProvider);

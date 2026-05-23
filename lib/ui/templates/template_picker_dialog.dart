@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ilovebioconjunction/data/substrate_template.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
-import 'package:ilovebioconjunction/ui/templates/template_notifier.dart';
+import 'package:ilovebioconjugation/data/substrate_template.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
+import 'package:ilovebioconjugation/ui/templates/template_notifier.dart';
 
 Future<SubstrateTemplate?> showTemplatePicker(
   BuildContext context, {

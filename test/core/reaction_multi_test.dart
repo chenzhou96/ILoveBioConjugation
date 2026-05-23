@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ilovebioconjunction/core/chemical.dart';
-import 'package:ilovebioconjunction/core/reaction.dart';
+import 'package:ilovebioconjugation/core/chemical.dart';
+import 'package:ilovebioconjugation/core/reaction.dart';
 
 void main() {
   group('Multi-substrate solver — Python parity', () {

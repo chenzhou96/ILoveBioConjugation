@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ilovebioconjunction/theme/app_theme.dart';
-import 'package:ilovebioconjunction/ui/calculator/calculator_screen.dart';
-import 'package:ilovebioconjunction/ui/history/history_detail_screen.dart';
-import 'package:ilovebioconjunction/ui/history/history_screen.dart';
+import 'package:ilovebioconjugation/theme/app_theme.dart';
+import 'package:ilovebioconjugation/ui/calculator/calculator_screen.dart';
+import 'package:ilovebioconjugation/ui/history/history_detail_screen.dart';
+import 'package:ilovebioconjugation/ui/history/history_screen.dart';
 
 final _router = GoRouter(
   initialLocation: '/',

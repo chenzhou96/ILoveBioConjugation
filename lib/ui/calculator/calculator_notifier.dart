@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ilovebioconjunction/core/chemical.dart';
-import 'package:ilovebioconjunction/core/reaction.dart';
-import 'package:ilovebioconjunction/core/validators.dart';
-import 'package:ilovebioconjunction/data/calculation_history.dart';
-import 'package:ilovebioconjunction/data/app_database.dart';
-import 'package:ilovebioconjunction/ui/calculator/state.dart';
-import 'package:ilovebioconjunction/ui/history/history_screen.dart';
+import 'package:ilovebioconjugation/core/chemical.dart';
+import 'package:ilovebioconjugation/core/reaction.dart';
+import 'package:ilovebioconjugation/core/validators.dart';
+import 'package:ilovebioconjugation/data/calculation_history.dart';
+import 'package:ilovebioconjugation/data/app_database.dart';
+import 'package:ilovebioconjugation/ui/calculator/state.dart';
+import 'package:ilovebioconjugation/ui/history/history_screen.dart';
 
 /// Provider for the calculator state.
 final calculatorProvider =

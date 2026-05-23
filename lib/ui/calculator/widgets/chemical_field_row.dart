@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
-import 'package:ilovebioconjunction/ui/shared/unit_dropdown.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
+import 'package:ilovebioconjugation/ui/shared/unit_dropdown.dart';
 
 class ChemicalFieldRow extends StatefulWidget {
   final String label;

@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
-import 'package:ilovebioconjunction/ui/calculator/calculator_notifier.dart';
-import 'package:ilovebioconjunction/ui/calculator/state.dart';
-import 'package:ilovebioconjunction/ui/calculator/widgets/chemical_card.dart';
-import 'package:ilovebioconjunction/ui/calculator/widgets/reaction_settings_card.dart';
-import 'package:ilovebioconjunction/ui/calculator/widgets/result_data_table.dart';
-import 'package:ilovebioconjunction/ui/calculator/widgets/result_metrics_row.dart';
-import 'package:ilovebioconjunction/ui/calculator/widgets/status_banner.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
+import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
+import 'package:ilovebioconjugation/ui/calculator/state.dart';
+import 'package:ilovebioconjugation/ui/calculator/widgets/chemical_card.dart';
+import 'package:ilovebioconjugation/ui/calculator/widgets/reaction_settings_card.dart';
+import 'package:ilovebioconjugation/ui/calculator/widgets/result_data_table.dart';
+import 'package:ilovebioconjugation/ui/calculator/widgets/result_metrics_row.dart';
+import 'package:ilovebioconjugation/ui/calculator/widgets/status_banner.dart';
 
 class CalculatorScreen extends ConsumerStatefulWidget {
   const CalculatorScreen({super.key});

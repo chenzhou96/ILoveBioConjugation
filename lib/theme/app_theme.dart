@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
 
 class AppTheme {
   AppTheme._();

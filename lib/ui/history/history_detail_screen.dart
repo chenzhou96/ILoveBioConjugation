@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ilovebioconjunction/data/calculation_history.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
-import 'package:ilovebioconjunction/ui/calculator/calculator_notifier.dart';
-import 'package:ilovebioconjunction/ui/history/history_screen.dart';
+import 'package:ilovebioconjugation/data/calculation_history.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
+import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
+import 'package:ilovebioconjugation/ui/history/history_screen.dart';
 
 class HistoryDetailScreen extends ConsumerWidget {
   final int recordId;

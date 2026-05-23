@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ilovebioconjunction/core/chemical.dart';
+import 'package:ilovebioconjugation/core/chemical.dart';
 
 void main() {
   group('Chemical construction', () {

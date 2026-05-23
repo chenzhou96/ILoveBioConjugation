@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ilovebioconjunction/app.dart';
-import 'package:ilovebioconjunction/data/app_database.dart';
+import 'package:ilovebioconjugation/app.dart';
+import 'package:ilovebioconjugation/data/app_database.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

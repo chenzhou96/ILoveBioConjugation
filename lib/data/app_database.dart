@@ -2,8 +2,8 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ilovebioconjunction/data/calculation_history.dart';
-import 'package:ilovebioconjunction/data/substrate_template.dart';
+import 'package:ilovebioconjugation/data/calculation_history.dart';
+import 'package:ilovebioconjugation/data/substrate_template.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';

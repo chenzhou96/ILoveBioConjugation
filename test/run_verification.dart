@@ -1,8 +1,8 @@
 // Standalone verification script — verifies Dart solver matches Python output.
 // Run with: dart run test/run_verification.dart
-import 'package:ilovebioconjunction/core/chemical.dart';
-import 'package:ilovebioconjunction/core/reaction.dart';
-import 'package:ilovebioconjunction/core/validators.dart';
+import 'package:ilovebioconjugation/core/chemical.dart';
+import 'package:ilovebioconjugation/core/reaction.dart';
+import 'package:ilovebioconjugation/core/validators.dart';
 
 void main() {
   var passed = 0;

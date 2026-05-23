@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ilovebioconjunction/data/app_database.dart';
-import 'package:ilovebioconjunction/data/calculation_history.dart';
-import 'package:ilovebioconjunction/theme/app_colors.dart';
+import 'package:ilovebioconjugation/data/app_database.dart';
+import 'package:ilovebioconjugation/data/calculation_history.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
 
 final historyProvider = FutureProvider<List<CalculationHistory>>((ref) async {
   final db = ref.read(appDatabaseProvider);
