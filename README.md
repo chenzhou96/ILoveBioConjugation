@@ -1,17 +1,83 @@
-# ilovereaction
+# 我爱投反应 · ILoveBioConjugation
 
-A new Flutter project.
+供实验室同事使用的生物偶联投料计算工作台。Flutter / Dart 实现，支持一个主底物、最多三个副底物、摩尔比或质量比计算，以及本地历史记录和底物模板。
 
-## Getting Started
+## 开始使用
 
-This project is a starting point for a Flutter application.
+1. 选择摩尔比或质量比，填写目标反应体积（也可由已知条件推导）
+2. 填写各启用底物的母液浓度和单位；跨质量/摩尔浓度换算时填写分子量
+3. 提供足够的已知条件：终浓度、取用体积、相对主底物的投料比
+4. 点击「运行计算」，核对每种母液的取用体积、终浓度和补加溶剂体积
+5. 复制结果到实验记录，或从历史记录恢复原始输入后重新计算
 
-A few resources to get you started if this is your first Flutter project:
+取样清单中的母液浓度和终浓度均同时显示摩尔浓度与质量浓度，复制结果也保留两种浓度。换算采用当前求解值和分子量；缺少分子量时仍显示已知的浓度，另一种明确标为无法换算，不猜测分子量。
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+空白表示未知，不等于零。支持科学计数法，例如 `2.5e-3`。主底物的投料比默认为 1，也可使用其他正值作为参考比例；其余底物与主底物的投料比例按输入比值计算。单位标签使用 `u` 表示微（μ）。
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 计算规则与边界
+
+- 稀释守恒：母液浓度 × 取用体积 = 终浓度 × 反应总体积
+- 摩尔比模式比较物质的量；质量比模式比较质量。质量浓度与摩尔浓度之间的换算需要分子量
+- 同时填写的条件必须相互一致。条件不足、矛盾、非有限数字、未知单位或物理上无法配制的结果会明确报错
+- 母液总体积超过指定目标体积时拒绝计算，**不会悄悄增大目标体积或改变终浓度**。请自行调整实验条件后重算
+- 未填写目标体积时，先尝试通过已知取用体积/终浓度推导；若各母液体积已知而没有浓度约束决定总体积，则采用母液体积之和（不额外补溶剂）
+- 浓度、分子量、投料比和反应总体积必须为正数；零取用量/零终浓度只在方程可一致求解时有效
+- 修改任意输入或单位后，旧结果与复制内容立即失效，需重新计算
+- 展示值会适当格式化；内部使用双精度数值，不以展示舍入结果继续计算。小数精度和单位不能代替实际移液器的量程核查
+
+本工具只计算配比，不判断反应化学可行性、试剂兼容性、溶剂选择或移液器可操作范围。实验执行前请按实验室流程复核。
+
+## 工作区与设置
+
+顶部菜单提供新建计算、运行/复制结果、历史记录、模板库、设置与帮助。桌面侧栏可以折叠，窄屏使用适配导航。
+
+桌面采用紧凑参数矩阵与整宽取样清单：默认字号下，1366×768 和 1440×900 视口可同时显示主底物、3 个副底物的全部输入以及 4 行计算结果，不需要页面滚动。常用控件与字体缩小，保留分组留白。小窗口、手机及放大字号改用可滚动布局，避免裁切字段；超长错误说明也保留滚动查看能力。
+
+设置支持跟随系统/浅色/深色主题、阅读字号、默认体积/浓度单位，以及侧栏展开状态。偏好存储在本机 `workspace_settings.json`，重启后恢复。默认单位只影响新建或重置后的计算，不会改写当前实验输入。设置文件损坏或保存失败时显示提示，计算历史独立保存。
+
+## 历史与数据
+
+数据存储在操作系统应用支持目录中的 SQLite 文件 `ilovereaction.db`，无需服务器或账户。
+
+新版历史在保存计算结果的同时，保存版本化的原始输入快照，包括字符串、单位、启用状态和空白未知项。恢复时不会把 nM/pM 数值四舍五入为零，也不会继承上一组多余底物。原始输入和求解后的结果分开保存，便于复现。
+
+数据库 v1 会原地升级到 v2；旧记录仍可查看和恢复。旧版本没有保存完整输入，无法凭空恢复当时的所有原始字符串、空白项或槽位。旧记录按已保存的数值/单位尽量无损恢复。升级前建议备份数据库；旧版本程序不会理解新增的快照字段。
+
+历史写入失败不会抹掉有效计算结果，会显示保存警告。未成功保存时请先复制结果。
+
+## 开发与检查
+
+需要 Flutter stable（Dart ≥ 3.12）；本次验证基准为 Flutter 3.44.0 / Dart 3.12.0。首次安装请使用 [Flutter 官方安装说明](https://docs.flutter.dev/install)。
+
+```sh
+flutter pub get
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+dart run test/run_verification.dart
+```
+
+Windows 发布构建需在具备 Visual Studio C++ 桌面开发工具链的 Windows 环境运行：
+
+```powershell
+flutter build windows --release
+```
+
+Windows 发布前还需确认 `sqlite3.dll` 随可执行文件一起打包（当前 `sqflite_common_ffi` 的 release 运行要求），并在干净的 Windows 用户环境实际验证首次启动、历史迁移与设置重启恢复。
+
+项目保留 Windows、macOS、Android 和 iOS 平台工程。Linux 云端的单元/组件测试和 bundle 编译不能替代目标平台的安装包测试；没有新增网页持久化实现或部署。
+
+### 测试分层
+
+- `test/core/`：单位换算、化学属性、单/多底物求解、异常与约束边界
+- `test/verification/`：固定随机种子的独立解析解验证；覆盖质量/摩尔模式、单底物三种未知量、2–4 底物正向/反向推导，跨 pM/pL 到大数量级共 2,100 组求解
+- `test/state/`、`test/data/`：输入变更、旧结果失效、历史快照/旧记录恢复、模板替换、保存失败和数据库升级
+- `test/settings/`：设置持久化、格式校验、并发保存顺序和失败恢复
+- `test/ui/`：响应式布局、工作区导航、菜单与关键交互
+- `test/run_verification.dart`：原始参考算例与单位换算的独立运行入口
+
+`chemical_config.py` 是早期 Python 参考实现，不是当前应用的运行后端，也不应作为未经复核的唯一正确性标准。当前应用实际使用 `lib/core/` 下的 Dart 计算引擎。
+
+## 界面方向
+
+参考 [ChatGPT Work 官方界面](https://learn.chatgpt.com/images/codex/chatgpt-web.webp) 的浅色侧栏、白色工作区、克制的中性色、细边框和清晰留白。保留实验计算器的输入/结果工作流，不引入对话式操作或 OpenAI 品牌元素。

@@ -1,51 +1,56 @@
-// Input parsing and unit conversion helpers — port of main.py utility functions.
+// Input parsing and unit conversion helpers.
+import 'dart:math' as math;
 
-/// Parse a string to double, returning null for empty input.
+import 'unit_converter.dart';
+
+/// Parse a finite number, returning null only for empty input.
 double? parseFloatOrNull(String value) {
   final trimmed = value.trim();
   if (trimmed.isEmpty) return null;
   final parsed = double.tryParse(trimmed);
-  if (parsed == null) {
-    throw ArgumentError('必须是数字。');
+  if (parsed == null || !parsed.isFinite) {
+    throw ArgumentError('必须是有限数字。');
   }
   return parsed;
 }
 
+double _convert(double value, String unit, Map<String, int> units) {
+  final exponent = units[unit];
+  if (exponent == null) {
+    throw ArgumentError('不支持的单位: $unit');
+  }
+  if (!value.isFinite || value < 0) {
+    throw ArgumentError('数值必须是非负有限数字。');
+  }
+  final converted = value * math.pow(10, exponent);
+  if (!converted.isFinite || (value > 0 && converted == 0)) {
+    throw ArgumentError('单位换算结果超出可计算范围。');
+  }
+  return converted;
+}
+
 /// Convert a volume from its unit to mL (base unit expected by Chemical).
-double convertVolumeToMl(double volume, String unit) {
-  const factors = <String, double>{
-    'L': 1000,
-    'mL': 1,
-    'uL': 0.001,
-    'nL': 0.000001,
-    'pL': 0.000000001,
-  };
-  return volume * (factors[unit] ?? 1);
-}
+double convertVolumeToMl(double volume, String unit) =>
+    _convert(volume, unit, UnitConverter.volumeUnits);
 
-/// Convert molecular weight from kDa to Da.
+/// Convert molecular weight to Da.
 double convertMwToDa(double mw, String unit) {
-  return unit == 'kDa' ? mw * 1000 : mw;
+  if (mw <= 0) {
+    throw ArgumentError('分子量必须大于 0。');
+  }
+  return _convert(mw, unit, UnitConverter.molecularUnits);
 }
 
-/// Convert a concentration value to its base unit.
-///
-/// Molar concentrations → mM base.
-/// Mass concentrations → mg/mL base.
+/// Convert molar concentration to mM or mass concentration to mg/mL.
 double convertConcentrationToBaseUnit(double value, String unit) {
-  const molarFactors = <String, double>{
-    'M': 1000, 'mM': 1, 'uM': 0.001, 'nM': 0.000001, 'pM': 0.000000001,
-  };
-  const massFactors = <String, double>{
-    'g/mL': 1000, 'mg/mL': 1, 'ug/mL': 0.001, 'ng/mL': 0.000001, 'pg/mL': 0.000000001,
-  };
-  if (molarFactors.containsKey(unit)) return value * molarFactors[unit]!;
-  if (massFactors.containsKey(unit)) return value * massFactors[unit]!;
-  return value;
+  final units = isMolarUnit(unit)
+      ? UnitConverter.molarConcUnits
+      : UnitConverter.massConcUnits;
+  return _convert(value, unit, units);
 }
 
-/// Whether a concentration unit string represents a molar unit.
-bool isMolarUnit(String unit) => unit.endsWith('M') && !unit.contains('/');
+/// Whether a concentration unit is a supported molar unit.
+bool isMolarUnit(String unit) => UnitConverter.molarConcUnits.containsKey(unit);
 
-/// Whether a concentration unit string represents a mass concentration unit.
-bool isMassUnit(String unit) => unit.contains('/');
+/// Whether a concentration unit is a supported mass concentration unit.
+bool isMassUnit(String unit) => UnitConverter.massConcUnits.containsKey(unit);

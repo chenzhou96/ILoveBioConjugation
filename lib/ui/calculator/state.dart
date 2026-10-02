@@ -1,18 +1,20 @@
+import 'package:ilovebioconjugation/data/calculation_input_snapshot.dart';
+
 /// Input state for a single substrate card.
 class SubstrateInput {
-  bool enabled;
-  String name;
-  String mw;
-  String mwUnit; // "Da" or "kDa"
-  String storageConc;
-  String storageUnit; // molar or mass conc unit
-  String finalConc;
-  String finalUnit;
-  String reactionRatio;
-  String storageVolume;
-  String storageVolumeUnit; // volume unit
+  final bool enabled;
+  final String name;
+  final String mw;
+  final String mwUnit; // "Da" or "kDa"
+  final String storageConc;
+  final String storageUnit; // molar or mass conc unit
+  final String finalConc;
+  final String finalUnit;
+  final String reactionRatio;
+  final String storageVolume;
+  final String storageVolumeUnit; // volume unit
 
-  SubstrateInput({
+  const SubstrateInput({
     this.enabled = false,
     this.name = '',
     this.mw = '',
@@ -25,6 +27,35 @@ class SubstrateInput {
     this.storageVolume = '',
     this.storageVolumeUnit = 'uL',
   });
+
+  SubstrateInputSnapshot toSnapshot() => SubstrateInputSnapshot(
+    enabled: enabled,
+    name: name,
+    mw: mw,
+    mwUnit: mwUnit,
+    storageConc: storageConc,
+    storageUnit: storageUnit,
+    finalConc: finalConc,
+    finalUnit: finalUnit,
+    reactionRatio: reactionRatio,
+    storageVolume: storageVolume,
+    storageVolumeUnit: storageVolumeUnit,
+  );
+
+  factory SubstrateInput.fromSnapshot(SubstrateInputSnapshot snapshot) =>
+      SubstrateInput(
+        enabled: snapshot.enabled,
+        name: snapshot.name,
+        mw: snapshot.mw,
+        mwUnit: snapshot.mwUnit,
+        storageConc: snapshot.storageConc,
+        storageUnit: snapshot.storageUnit,
+        finalConc: snapshot.finalConc,
+        finalUnit: snapshot.finalUnit,
+        reactionRatio: snapshot.reactionRatio,
+        storageVolume: snapshot.storageVolume,
+        storageVolumeUnit: snapshot.storageVolumeUnit,
+      );
 
   SubstrateInput copyWith({
     bool? enabled,
@@ -59,8 +90,14 @@ class SubstrateInput {
 class ResultRow {
   final String role;
   final String name;
+
+  /// Formatted molar concentrations, independent of the selected ratio basis.
   final String stock;
   final String finalConc;
+
+  /// Formatted mass concentrations, or an explicit conversion-unavailable label.
+  final String stockMass;
+  final String finalConcMass;
   final String volume;
   final String volumePct;
   final String ratio;
@@ -70,6 +107,8 @@ class ResultRow {
     required this.name,
     required this.stock,
     required this.finalConc,
+    required this.stockMass,
+    required this.finalConcMass,
     required this.volume,
     required this.volumePct,
     required this.ratio,
@@ -103,6 +142,7 @@ class CalculatorState {
   final String statusMessage;
   final StatusLevel statusLevel;
   final String errorMessage;
+  final String historySaveError;
   final ResultMetrics metrics;
   final List<ResultRow> rows;
   final List<(String, String)> summaryRows;
@@ -112,9 +152,10 @@ class CalculatorState {
     this.reactionVolume = '',
     this.reactionVolumeUnit = 'uL',
     this.ratioType = true,
-    this.statusMessage = '请在左侧填写参数，再点击"运行计算"。',
+    this.statusMessage = '填写已知条件，再点击“运行计算”。',
     this.statusLevel = StatusLevel.info,
     this.errorMessage = '就绪',
+    this.historySaveError = '',
     this.metrics = const ResultMetrics(),
     this.rows = const [],
     this.summaryRows = const [],
@@ -128,6 +169,7 @@ class CalculatorState {
     String? statusMessage,
     StatusLevel? statusLevel,
     String? errorMessage,
+    String? historySaveError,
     ResultMetrics? metrics,
     List<ResultRow>? rows,
     List<(String, String)>? summaryRows,
@@ -140,6 +182,7 @@ class CalculatorState {
       statusMessage: statusMessage ?? this.statusMessage,
       statusLevel: statusLevel ?? this.statusLevel,
       errorMessage: errorMessage ?? this.errorMessage,
+      historySaveError: historySaveError ?? this.historySaveError,
       metrics: metrics ?? this.metrics,
       rows: rows ?? this.rows,
       summaryRows: summaryRows ?? this.summaryRows,

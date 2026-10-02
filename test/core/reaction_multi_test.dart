@@ -73,6 +73,7 @@ void main() {
         unitCoefficient: 3,
         name: 'Secondary2',
         storageConcMolar: 100,
+        molecularWeight: 1000, // 100 mg/mL in mass-ratio mode
         reactionRatio: 0.5,
       );
 
@@ -80,8 +81,15 @@ void main() {
         ratioType: false, // mass ratio
         substrateMain: main,
         substratesSecondary: [sec1, sec2],
-        reactionVolume: 5,
+        reactionVolume: 12,
       );
+
+      // Amounts are 20, 40 and 10 mg; volumes are 2, 8 and 0.1 mL.
+      expect(main.storageConcVolume, closeTo(2, 1e-12));
+      expect(sec1.storageConcVolume, closeTo(8, 1e-12));
+      expect(sec2.storageConcVolume, closeTo(0.1, 1e-12));
+      expect(rxn.totalStockVolume, closeTo(10.1, 1e-12));
+      expect(sec2.finalConcMass, closeTo(10 / 12, 1e-12));
 
       // All substrates should have resolved volumes
       for (final chem in rxn.allSubstrates) {
