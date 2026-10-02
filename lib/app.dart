@@ -45,7 +45,9 @@ final _router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => const CalculatorScreen(),
+          builder: (context, state) => CalculatorScreen(
+            openPlanning: state.uri.queryParameters['planning'] == 'gradient',
+          ),
         ),
         GoRoute(
           path: '/settings',

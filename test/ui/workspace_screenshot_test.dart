@@ -12,6 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ilovebioconjugation/app.dart';
+import 'package:ilovebioconjugation/core/planning.dart';
+import 'package:ilovebioconjugation/data/calculation_input_snapshot.dart';
 import 'package:ilovebioconjugation/theme/app_theme.dart';
 import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
 import 'package:ilovebioconjugation/ui/calculator/calculator_screen.dart';
@@ -21,99 +23,101 @@ import 'package:ilovebioconjugation/ui/settings/settings_screen.dart';
 
 class _ScreenshotNotifier extends CalculatorNotifier {
   @override
-  CalculatorState build() => super.build().copyWith(
-    reactionVolume: '100',
-    substrates: [
-      SubstrateInput(
-        enabled: true,
-        name: 'IgG',
-        mw: '150',
-        mwUnit: 'kDa',
-        storageConc: '10',
-        storageUnit: 'mg/mL',
-        finalConc: '1',
-        finalUnit: 'mg/mL',
-        reactionRatio: '1',
+  CalculatorState build() => _completeFixture(
+    super.build().copyWith(
+      reactionVolume: '100',
+      substrates: [
+        SubstrateInput(
+          enabled: true,
+          name: 'IgG',
+          mw: '150',
+          mwUnit: 'kDa',
+          storageConc: '10',
+          storageUnit: 'mg/mL',
+          finalConc: '1',
+          finalUnit: 'mg/mL',
+          reactionRatio: '1',
+        ),
+        SubstrateInput(
+          enabled: true,
+          name: 'TCEP',
+          mw: '286.65',
+          storageConc: '10',
+          storageUnit: 'mM',
+          reactionRatio: '10',
+        ),
+        SubstrateInput(
+          enabled: true,
+          name: 'Linker',
+          mw: '500',
+          storageConc: '20',
+          storageUnit: 'mM',
+          reactionRatio: '5',
+        ),
+        SubstrateInput(
+          enabled: true,
+          name: 'Probe',
+          mw: '750',
+          storageConc: '5',
+          storageUnit: 'mM',
+          reactionRatio: '2',
+        ),
+      ],
+      statusMessage: '计算完成，请核对下方取样清单。',
+      statusLevel: StatusLevel.success,
+      metrics: const ResultMetrics(
+        totalVolume: '100.00 uL',
+        stockVolume: '11.10 uL',
+        diluentVolume: '88.90 uL',
+        substrateCount: '4',
       ),
-      SubstrateInput(
-        enabled: true,
-        name: 'TCEP',
-        mw: '286.65',
-        storageConc: '10',
-        storageUnit: 'mM',
-        reactionRatio: '10',
-      ),
-      SubstrateInput(
-        enabled: true,
-        name: 'Linker',
-        mw: '500',
-        storageConc: '20',
-        storageUnit: 'mM',
-        reactionRatio: '5',
-      ),
-      SubstrateInput(
-        enabled: true,
-        name: 'Probe',
-        mw: '750',
-        storageConc: '5',
-        storageUnit: 'mM',
-        reactionRatio: '2',
-      ),
-    ],
-    statusMessage: '计算完成，请核对下方取样清单。',
-    statusLevel: StatusLevel.success,
-    metrics: const ResultMetrics(
-      totalVolume: '100.00 uL',
-      stockVolume: '11.10 uL',
-      diluentVolume: '88.90 uL',
-      substrateCount: '4',
+      rows: const [
+        ResultRow(
+          role: '主底物',
+          name: 'IgG',
+          stock: '66.67 uM',
+          stockMass: '10.00 mg/mL',
+          finalConc: '6.67 uM',
+          finalConcMass: '1.00 mg/mL',
+          volume: '10.00 uL',
+          volumePct: '10.00%',
+          ratio: '1.0000',
+        ),
+        ResultRow(
+          role: '副底物1',
+          name: 'TCEP',
+          stock: '10.00 mM',
+          stockMass: '2.87 mg/mL',
+          finalConc: '66.67 uM',
+          finalConcMass: '19.11 ug/mL',
+          volume: '666.67 nL',
+          volumePct: '0.67%',
+          ratio: '10.0000',
+        ),
+        ResultRow(
+          role: '副底物2',
+          name: 'Linker',
+          stock: '20.00 mM',
+          stockMass: '10.00 mg/mL',
+          finalConc: '33.33 uM',
+          finalConcMass: '16.67 ug/mL',
+          volume: '166.67 nL',
+          volumePct: '0.17%',
+          ratio: '5.0000',
+        ),
+        ResultRow(
+          role: '副底物3',
+          name: 'Probe',
+          stock: '5.00 mM',
+          stockMass: '3.75 mg/mL',
+          finalConc: '13.33 uM',
+          finalConcMass: '10.00 ug/mL',
+          volume: '266.67 nL',
+          volumePct: '0.27%',
+          ratio: '2.0000',
+        ),
+      ],
     ),
-    rows: const [
-      ResultRow(
-        role: '主底物',
-        name: 'IgG',
-        stock: '66.67 uM',
-        stockMass: '10.00 mg/mL',
-        finalConc: '6.67 uM',
-        finalConcMass: '1.00 mg/mL',
-        volume: '10.00 uL',
-        volumePct: '10.00%',
-        ratio: '1.0000',
-      ),
-      ResultRow(
-        role: '副底物1',
-        name: 'TCEP',
-        stock: '10.00 mM',
-        stockMass: '2.87 mg/mL',
-        finalConc: '66.67 uM',
-        finalConcMass: '19.11 ug/mL',
-        volume: '666.67 nL',
-        volumePct: '0.67%',
-        ratio: '10.0000',
-      ),
-      ResultRow(
-        role: '副底物2',
-        name: 'Linker',
-        stock: '20.00 mM',
-        stockMass: '10.00 mg/mL',
-        finalConc: '33.33 uM',
-        finalConcMass: '16.67 ug/mL',
-        volume: '166.67 nL',
-        volumePct: '0.17%',
-        ratio: '5.0000',
-      ),
-      ResultRow(
-        role: '副底物3',
-        name: 'Probe',
-        stock: '5.00 mM',
-        stockMass: '3.75 mg/mL',
-        finalConc: '13.33 uM',
-        finalConcMass: '10.00 ug/mL',
-        volume: '266.67 nL',
-        volumePct: '0.27%',
-        ratio: '2.0000',
-      ),
-    ],
   );
 
   // Keep this deterministic presentation fixture independent of storage.
@@ -127,33 +131,67 @@ class _MissingMwScreenshotNotifier extends _ScreenshotNotifier {
   @override
   CalculatorState build() {
     final baseline = super.build();
-    return baseline.copyWith(
-      substrates: [
-        for (var index = 0; index < baseline.substrates.length; index++)
-          baseline.substrates[index].copyWith(
-            mw: '',
-            storageConc: index == 0 ? '66.6667' : null,
-            storageUnit: index == 0 ? 'uM' : null,
-            finalConc: index == 0 ? '6.66667' : null,
-            finalUnit: 'uM',
-          ),
-      ],
-      rows: [
-        for (final row in baseline.rows)
-          ResultRow(
-            role: row.role,
-            name: row.name,
-            stock: row.stock,
-            stockMass: '无法换算（缺少分子量）',
-            finalConc: row.finalConc,
-            finalConcMass: '无法换算（缺少分子量）',
-            volume: row.volume,
-            volumePct: row.volumePct,
-            ratio: row.ratio,
-          ),
-      ],
+    return _completeFixture(
+      baseline.copyWith(
+        substrates: [
+          for (var index = 0; index < baseline.substrates.length; index++)
+            baseline.substrates[index].copyWith(
+              mw: '',
+              storageConc: index == 0 ? '66.6667' : null,
+              storageUnit: index == 0 ? 'uM' : null,
+              finalConc: index == 0 ? '6.66667' : null,
+              finalUnit: 'uM',
+            ),
+        ],
+        rows: [
+          for (final row in baseline.rows)
+            ResultRow(
+              role: row.role,
+              name: row.name,
+              stock: row.stock,
+              stockMass: '无法换算（缺少分子量）',
+              finalConc: row.finalConc,
+              finalConcMass: '无法换算（缺少分子量）',
+              volume: row.volume,
+              volumePct: row.volumePct,
+              ratio: row.ratio,
+            ),
+        ],
+      ),
     );
   }
+}
+
+CalculatorState _completeFixture(CalculatorState input) {
+  final raw = solveCalculation(
+    CalculationInputSnapshot(
+      reactionVolume: input.reactionVolume,
+      reactionVolumeUnit: input.reactionVolumeUnit,
+      ratioType: input.ratioType,
+      substrates: input.substrates.map((s) => s.toSnapshot()).toList(),
+    ),
+  );
+  return input.copyWith(
+    rawResult: raw,
+    rows: [
+      for (var i = 0; i < input.rows.length; i++)
+        ResultRow(
+          sourceSlot: i,
+          role: input.rows[i].role,
+          name: input.rows[i].name,
+          stock: input.rows[i].stock,
+          stockMass: input.rows[i].stockMass,
+          finalConc: input.rows[i].finalConc,
+          finalConcMass: input.rows[i].finalConcMass,
+          volume: input.rows[i].volume,
+          volumePct: input.rows[i].volumePct,
+          ratio: input.rows[i].ratio,
+          lowVolume: raw.warnings.any(
+            (w) => w.slot == i && w.code == 'low_volume',
+          ),
+        ),
+    ],
+  );
 }
 
 void main() {

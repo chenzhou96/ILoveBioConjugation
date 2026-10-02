@@ -194,7 +194,7 @@ class ChemicalCard extends StatelessWidget {
       width: 26,
       child: isMain
           ? Tooltip(
-              message: '投料比参考底物',
+              message: '主底物 / 固定蛋白位置',
               child: Icon(
                 Icons.science_outlined,
                 size: 17,

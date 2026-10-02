@@ -101,16 +101,37 @@ class HistoryScreen extends ConsumerWidget {
               );
               final date = formatHistoryDate(record.createdAt);
               final names = record.substrates.map((s) => s.name).join('、');
+              final snapshot = record.inputSnapshot;
+              final gradient = snapshot?.gradient;
+              final referenceSlot = snapshot?.referenceSlot ?? 0;
+              final referenceRatio = record.substrates
+                  .where((s) => s.sortOrder == referenceSlot)
+                  .firstOrNull
+                  ?.reactionRatio;
+              final referenceSuffix = referenceRatio == null
+                  ? '比值不适用'
+                  : referenceRatio == 1
+                  ? '= 1'
+                  : '= ${formatHistoryNumber(referenceRatio, 4)}（历史原值）';
+              final reference =
+                  record.substrates
+                      .where((s) => s.sortOrder == referenceSlot)
+                      .firstOrNull
+                      ?.name ??
+                  '主底物';
+              final badge = gradient == null
+                  ? ''
+                  : '梯度 ${gradient.points.length} 条件 × ${gradient.replicates} · ';
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: ListTile(
                   title: Text(
-                    '$date — $ratioLabel — $vol',
+                    '$badge$date · $ratioLabel · $vol',
                     style: TextStyle(fontSize: 13),
                   ),
                   subtitle: Text(
-                    names,
+                    '$names · 基准 $reference $referenceSuffix',
                     style: TextStyle(
                       fontSize: 11,
                       color: AppColors.of(context).muted,

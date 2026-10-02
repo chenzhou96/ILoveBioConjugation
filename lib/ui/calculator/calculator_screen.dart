@@ -1,4 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:ilovebioconjugation/export/experiment_markdown.dart';
+import 'package:ilovebioconjugation/ui/planning/record_actions.dart';
+import 'package:ilovebioconjugation/ui/planning/gradient_dialog.dart';
+import 'package:ilovebioconjugation/ui/planning/working_stock_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +19,8 @@ import 'package:ilovebioconjugation/ui/shared/section_card.dart';
 import 'package:ilovebioconjugation/ui/shared/confirm_reset_dialog.dart';
 
 class CalculatorScreen extends ConsumerStatefulWidget {
-  const CalculatorScreen({super.key});
+  final bool openPlanning;
+  const CalculatorScreen({super.key, this.openPlanning = false});
 
   @override
   ConsumerState<CalculatorScreen> createState() => _CalculatorScreenState();
@@ -25,6 +30,16 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   final _resultsKey = GlobalKey();
   final _resultsScroll = ScrollController();
   final _pageScroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.openPlanning) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showGradientDialog(context);
+      });
+    }
+  }
 
   bool get _mac => defaultTargetPlatform == TargetPlatform.macOS;
 
@@ -144,6 +159,149 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     );
   }
 
+  String _resultReference(CalculatorState state) {
+    final raw = state.rawResult;
+    final enteredName = state.substrates[state.referenceSlot].name.trim();
+    final name =
+        raw?.substrateAt(state.referenceSlot).name ??
+        (enteredName.isEmpty
+            ? (state.referenceSlot == 0 ? '主底物' : '副底物${state.referenceSlot}')
+            : enteredName);
+    if (raw != null && raw.substrateAt(state.referenceSlot).ratio == null) {
+      return '$name 为 0，比值不适用';
+    }
+    return '$name = 1';
+  }
+
+  Widget _referenceSelector(
+    CalculatorState state,
+    CalculatorNotifier notifier,
+  ) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        '基准',
+        style: TextStyle(fontSize: 11, color: AppColors.of(context).muted),
+      ),
+      const SizedBox(width: 8),
+      Flexible(
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<int>(
+            key: const ValueKey('ratio-reference-selector'),
+            value: state.referenceSlot,
+            isDense: true,
+            isExpanded: true,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 12),
+            items: [
+              for (var i = 0; i < state.substrates.length; i++)
+                if (state.substrates[i].enabled)
+                  DropdownMenuItem(
+                    value: i,
+                    child: Text(
+                      i == state.referenceSlot
+                          ? _resultReference(state)
+                          : '${state.substrates[i].name.isEmpty ? '底物$i' : state.substrates[i].name} = 1',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+              final accepted = notifier.setReferenceSlot(value);
+              if (!accepted && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ref.read(calculatorProvider).planningMessage),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _resultTable(CalculatorState state, {bool compact = false}) =>
+      ResultDataTableWidget(
+        rows: state.rows,
+        compact: compact,
+        lowVolumeRows: {
+          for (var i = 0; i < state.rows.length; i++)
+            if (state.rows[i].lowVolume) i,
+        },
+        onWorkingStock: (index) =>
+            showWorkingStockDialog(context, state.rows[index].sourceSlot),
+      );
+
+  List<String> _extraWarnings(CalculatorState state) => [
+    for (final warning in state.rawResult?.warnings ?? [])
+      if (warning.code != 'low_volume') warning.message,
+  ];
+
+  Widget _desktopStatus(CalculatorState state) {
+    final warnings = _extraWarnings(state);
+    final details = [
+      if (state.historySaveError.isNotEmpty) state.historySaveError,
+      ...warnings,
+    ];
+    final text = state.statusLevel == StatusLevel.error
+        ? '请检查输入'
+        : state.historySaveError.isNotEmpty
+        ? '计算完成 · 历史记录未保存${warnings.isEmpty ? '' : '，另有操作提醒'}（点击详情）'
+        : details.isNotEmpty
+        ? '⚠ ${details.first}（点击详情）'
+        : state.rows.isEmpty
+        ? '待计算'
+        : state.statusLevel == StatusLevel.success
+        ? '基准 ${_resultReference(state)} · 请核对取样量'
+        : state.statusMessage;
+    return Semantics(
+      liveRegion: true,
+      child: Tooltip(
+        message: details.isEmpty ? state.statusMessage : details.join('\n'),
+        child: InkWell(
+          key: const ValueKey('result-warning-details'),
+          onTap: details.isEmpty
+              ? null
+              : () => showDialog<void>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('请核对计算提醒'),
+                    content: SingleChildScrollView(
+                      child: Text(
+                        details.join('\n\n'),
+                        style: const TextStyle(fontSize: 13, height: 1.6),
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('关闭'),
+                      ),
+                    ],
+                  ),
+                ),
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              color:
+                  details.isNotEmpty || state.statusLevel == StatusLevel.warning
+                  ? AppColors.of(context).warningFg
+                  : AppColors.of(context).muted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _header(CalculatorState state) => Container(
     width: double.infinity,
     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -191,6 +349,18 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                 label: Text('复制结果'),
               ),
             ),
+            OutlinedButton.icon(
+              key: const ValueKey('gradient-planning-button'),
+              onPressed: () => showGradientDialog(context),
+              icon: const Icon(Icons.stacked_line_chart, size: 16),
+              label: const Text('梯度方案'),
+            ),
+            RecordActions(
+              resultToken: state.rawResult,
+              buildMarkdown: () => state.rawResult == null
+                  ? ''
+                  : buildCalculationMarkdown(state.rawResult!),
+            ),
             IconButton(
               tooltip: '清空当前计算',
               onPressed: _confirmReset,
@@ -232,6 +402,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           onVolumeChanged: notifier.setReactionVolume,
           onVolumeUnitChanged: notifier.setReactionVolumeUnit,
           onRatioTypeChanged: notifier.setRatioType,
+          referenceSelector: _referenceSelector(state, notifier),
         ),
         const SizedBox(height: 14),
         Container(
@@ -253,10 +424,9 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Tooltip(
-                      message:
-                          '基准：${state.substrates.first.name.isEmpty ? '主底物' : state.substrates.first.name}',
+                      message: '基准：${_resultReference(state)}',
                       child: Text(
-                        '基准：${state.substrates.first.name.isEmpty ? '主底物' : state.substrates.first.name}',
+                        '基准：${_resultReference(state)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -345,37 +515,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Tooltip(
-                            message: state.historySaveError.isEmpty
-                                ? state.statusMessage
-                                : state.historySaveError,
-                            child: Text(
-                              state.statusLevel == StatusLevel.error
-                                  ? '请检查输入'
-                                  : state.historySaveError.isNotEmpty
-                                  ? '计算完成 · 历史记录未保存（悬停查看）'
-                                  : state.rows.isEmpty
-                                  ? '待计算'
-                                  : state.statusLevel == StatusLevel.success
-                                  ? '计算完成 · 请核对单位与取样量'
-                                  : state.statusMessage,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color:
-                                    state.statusLevel == StatusLevel.warning ||
-                                        state.historySaveError.isNotEmpty
-                                    ? AppColors.of(context).warningFg
-                                    : AppColors.of(context).muted,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      Expanded(child: _desktopStatus(state)),
                     ],
                   ),
                   if (state.rows.isNotEmpty) ...[
@@ -392,7 +532,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                     ),
                   ],
                   if (state.statusLevel != StatusLevel.error)
-                    ResultDataTableWidget(rows: state.rows, compact: true),
+                    _resultTable(state, compact: true),
                 ],
               ),
             ),
@@ -412,6 +552,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         onVolumeChanged: notifier.setReactionVolume,
         onVolumeUnitChanged: notifier.setReactionVolumeUnit,
         onRatioTypeChanged: notifier.setRatioType,
+        referenceSelector: _referenceSelector(state, notifier),
       ),
       SizedBox(height: 18),
       Row(
@@ -466,7 +607,10 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     key: _resultsKey,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Text('计算结果', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+      Text(
+        '计算结果 · 基准 ${_resultReference(state)}',
+        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+      ),
 
       SizedBox(height: 18),
       StatusBanner(
@@ -483,16 +627,16 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           level: StatusLevel.warning,
         ),
       ],
+      for (final warning in _extraWarnings(state)) ...[
+        const SizedBox(height: 12),
+        StatusBanner(message: warning, level: StatusLevel.warning),
+      ],
       SizedBox(height: 16),
       if (state.rows.isNotEmpty) ...[
         ResultMetricsRow(metrics: state.metrics),
         SizedBox(height: 16),
       ],
-      SectionCard(
-        title: '取样清单',
-
-        children: [ResultDataTableWidget(rows: state.rows)],
-      ),
+      SectionCard(title: '取样清单', children: [_resultTable(state)]),
       if (state.rows.isNotEmpty) ...[
         SizedBox(height: 12),
         Text(

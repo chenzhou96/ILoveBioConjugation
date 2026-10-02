@@ -46,6 +46,7 @@ void main() {
       'defaultVolumeUnit': 'drop',
       'defaultConcentrationUnit': 'unknown',
       'sidebarCollapsed': 'yes',
+      'minimumPipettingVolumeUl': -1,
     }.entries) {
       expect(
         () => AppSettings.fromJson({
@@ -65,6 +66,34 @@ void main() {
       );
     }
   });
+
+  test(
+    'pipetting threshold accepts zero and rejects nonfinite or negative values',
+    () {
+      expect(
+        AppSettings.fromJson(
+          const AppSettings(minimumPipettingVolumeUl: 0).toJson(),
+        ).minimumPipettingVolumeUl,
+        0,
+      );
+      for (final threshold in [
+        -1.0,
+        double.nan,
+        double.infinity,
+        double.negativeInfinity,
+      ]) {
+        expect(
+          () => AppSettings.fromJson(
+            const AppSettings()
+                .copyWith(minimumPipettingVolumeUl: threshold)
+                .toJson(),
+          ),
+          throwsFormatException,
+        );
+      }
+      expect(AppSettings.fromJson({'version': 1}).minimumPipettingVolumeUl, 1);
+    },
+  );
 
   group('file persistence', () {
     late Directory directory;
@@ -138,6 +167,8 @@ void main() {
       await notifier.setDefaultVolumeUnit('nL');
       await notifier.setDefaultConcentrationUnit('pM');
       await notifier.setSidebarCollapsed(true);
+      await notifier.setMinimumPipettingVolumeUl(2.5);
+      expect(store.saved.minimumPipettingVolumeUl, 2.5);
       expect(
         store.saved.toJson(),
         container.read(appSettingsProvider).toJson(),

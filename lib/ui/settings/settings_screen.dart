@@ -38,6 +38,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
                 SectionCard(
                   title: '外观',
+                  padding: const EdgeInsets.all(12),
                   children: [
                     _pair(context, [
                       _setting(
@@ -118,6 +119,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 SectionCard(
                   title: '新计算的默认单位',
+                  padding: const EdgeInsets.all(12),
                   children: [
                     _pair(context, [
                       _setting(
@@ -176,8 +178,11 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
+                const _PipettingSetting(),
+                const SizedBox(height: 16),
                 SectionCard(
                   title: '本地数据',
+                  padding: const EdgeInsets.all(12),
                   children: [
                     Text(
                       '历史记录、模板与偏好仅保存在当前设备。恢复默认设置会保留计算、历史和模板。',
@@ -197,7 +202,7 @@ class SettingsScreen extends ConsumerWidget {
                           builder: (context) => AlertDialog(
                             title: const Text('恢复默认设置？'),
                             content: const Text(
-                              '主题、文字大小、侧边栏和默认单位将恢复初始设置。当前计算、历史记录和模板将保留。',
+                              '主题、文字大小、侧边栏、默认单位和移液阈值将恢复初始设置。当前计算、历史记录和模板将保留。',
                             ),
                             actions: [
                               TextButton(
@@ -266,3 +271,98 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 String _unit(String value) => value.replaceFirst(RegExp(r'^u'), 'µ');
+
+class _PipettingSetting extends ConsumerStatefulWidget {
+  const _PipettingSetting();
+  @override
+  ConsumerState<_PipettingSetting> createState() => _PipettingSettingState();
+}
+
+class _PipettingSettingState extends ConsumerState<_PipettingSetting> {
+  late final TextEditingController _controller;
+  String? _error;
+  double? _lastSetting;
+  @override
+  void initState() {
+    super.initState();
+    _lastSetting = ref.read(appSettingsProvider).minimumPipettingVolumeUl;
+    _controller = TextEditingController(text: _lastSetting!.toString());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final value = double.tryParse(_controller.text.trim());
+    if (value == null || !value.isFinite || value < 0) {
+      setState(() => _error = '请输入大于或等于 0 的有限数字');
+      return;
+    }
+    setState(() => _error = null);
+    ref.read(appSettingsProvider.notifier).setMinimumPipettingVolumeUl(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = ref.watch(appSettingsProvider).minimumPipettingVolumeUl;
+    if (_lastSetting != value) {
+      _lastSetting = value;
+      _controller.text = value.toString();
+    }
+    final description = Text(
+      '1 µL 为初始示例，请按实验室移液器设置。低于阈值时提示配制工作液；0 关闭提醒。',
+      style: TextStyle(
+        fontSize: 12,
+        height: 1.6,
+        color: AppColors.of(context).muted,
+      ),
+    );
+    final controls = Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        SizedBox(
+          width: 210,
+          child: TextField(
+            key: const ValueKey('minimum-pipetting-setting'),
+            controller: _controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: '最小可移液体积',
+              suffixText: 'µL',
+              errorText: _error,
+            ),
+            onSubmitted: (_) => _save(),
+          ),
+        ),
+        OutlinedButton(onPressed: _save, child: const Text('保存阈值')),
+      ],
+    );
+    return SectionCard(
+      title: '移液可操作性',
+      padding: const EdgeInsets.all(12),
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) =>
+              constraints.maxWidth > 620 &&
+                  MediaQuery.textScalerOf(context).scale(1) <= 1.2
+              ? Row(
+                  children: [
+                    Expanded(child: description),
+                    const SizedBox(width: 20),
+                    SizedBox(width: 320, child: controls),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [description, const SizedBox(height: 12), controls],
+                ),
+        ),
+      ],
+    );
+  }
+}

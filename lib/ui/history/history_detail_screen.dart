@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ilovebioconjugation/ui/planning/planning_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ilovebioconjugation/data/calculation_history.dart';
@@ -32,7 +33,11 @@ class HistoryDetailScreen extends ConsumerWidget {
                 );
                 if (record != null) {
                   _restoreToCalculator(ref, record);
-                  context.go('/');
+                  context.go(
+                    record.inputSnapshot?.gradient == null
+                        ? '/'
+                        : '/?planning=gradient',
+                  );
                 }
               });
             },
@@ -61,6 +66,19 @@ class HistoryDetailScreen extends ConsumerWidget {
           final stockStr = _fmtVol(record.totalStockVolume);
           final diluentStr = _fmtVol(record.diluentVolume);
           final date = formatHistoryDate(record.createdAt);
+          final snapshot = record.inputSnapshot;
+          final gradient = snapshot?.gradient;
+          final referenceSlot = snapshot?.referenceSlot ?? 0;
+          final referenceRatio = record.substrates
+              .where((s) => s.sortOrder == referenceSlot)
+              .firstOrNull
+              ?.reactionRatio;
+          final reference =
+              record.substrates
+                  .where((s) => s.sortOrder == referenceSlot)
+                  .firstOrNull
+                  ?.name ??
+              '主底物';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(12),
@@ -82,6 +100,15 @@ class HistoryDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         _detailRow(context, '投料比类型', ratioLabel),
+                        _detailRow(
+                          context,
+                          '比值基准',
+                          referenceRatio == null
+                              ? '$reference（比值不适用）'
+                              : referenceRatio == 1
+                              ? '$reference = 1'
+                              : '$reference = ${formatHistoryNumber(referenceRatio, 4)}（历史原值）',
+                        ),
                         _detailRow(context, '反应体积', volStr),
                         _detailRow(context, '母液总体积', stockStr),
                         _detailRow(context, '补加溶剂体积', diluentStr),
@@ -94,9 +121,88 @@ class HistoryDetailScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+                if (gradient != null) ...[
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            '完整梯度条件',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _detailRow(
+                            context,
+                            '改变试剂',
+                            snapshot!.substrates[gradient.selectedSlot].name,
+                          ),
+                          _detailRow(
+                            context,
+                            '梯度点',
+                            '${gradient.points.join('、')} ${gradient.unit.replaceFirst('u', 'µ')}',
+                          ),
+                          _detailRow(
+                            context,
+                            '每条件重复',
+                            '${gradient.replicates} 次',
+                          ),
+                          _detailRow(
+                            context,
+                            '额外配制',
+                            '${planningNumber(gradient.extraPreparationFraction * 100)}%（只用于备液）',
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            '固定蛋白 / 主底物用量、总体积与其他试剂终浓度。恢复计算后在梯度面板重新生成整批，不会展开成互不关联的单组输入。',
+                            style: TextStyle(fontSize: 12, height: 1.6),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                if (snapshot != null)
+                  for (final recipe in [
+                    ...snapshot.workingStocks,
+                    ...?snapshot.gradient?.workingStocks,
+                  ]) ...[
+                    const SizedBox(height: 12),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              '工作液配制 · ${recipe.parentInput.name}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '原母液 ${recipe.parentInput.storageConc} ${recipe.parentInput.storageUnit} → 工作液 ${recipe.workingConcentration} ${recipe.workingUnit}',
+                              style: const TextStyle(fontSize: 12, height: 1.6),
+                            ),
+                            Text(
+                              '原母液 ${planningVolume(recipe.parentVolumeMl)} + ${recipe.diluentName} ${planningVolume(recipe.diluentVolumeMl)} = ${planningVolume(recipe.preparationVolumeMl)}',
+                              style: const TextStyle(fontSize: 12, height: 1.6),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 const SizedBox(height: 12),
                 Text(
-                  '底物详情',
+                  gradient == null ? '底物详情' : '基线详情（恢复后重新生成整批）',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),

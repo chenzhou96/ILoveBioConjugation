@@ -28,12 +28,16 @@ class AppSettings {
   final String defaultConcentrationUnit;
   final bool sidebarCollapsed;
 
+  /// Laboratory-specific minimum reliable aliquot. Zero disables warnings.
+  final double minimumPipettingVolumeUl;
+
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.textScale = 1,
     this.defaultVolumeUnit = 'uL',
     this.defaultConcentrationUnit = 'mg/mL',
     this.sidebarCollapsed = false,
+    this.minimumPipettingVolumeUl = 1,
   });
 
   AppSettings copyWith({
@@ -42,6 +46,7 @@ class AppSettings {
     String? defaultVolumeUnit,
     String? defaultConcentrationUnit,
     bool? sidebarCollapsed,
+    double? minimumPipettingVolumeUl,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     textScale: textScale ?? this.textScale,
@@ -49,6 +54,8 @@ class AppSettings {
     defaultConcentrationUnit:
         defaultConcentrationUnit ?? this.defaultConcentrationUnit,
     sidebarCollapsed: sidebarCollapsed ?? this.sidebarCollapsed,
+    minimumPipettingVolumeUl:
+        minimumPipettingVolumeUl ?? this.minimumPipettingVolumeUl,
   );
 
   Map<String, Object> toJson() => {
@@ -58,6 +65,7 @@ class AppSettings {
     'defaultVolumeUnit': defaultVolumeUnit,
     'defaultConcentrationUnit': defaultConcentrationUnit,
     'sidebarCollapsed': sidebarCollapsed,
+    'minimumPipettingVolumeUl': minimumPipettingVolumeUl,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -66,6 +74,7 @@ class AppSettings {
     final volume = json['defaultVolumeUnit'] ?? 'uL';
     final concentration = json['defaultConcentrationUnit'] ?? 'mg/mL';
     final collapsed = json['sidebarCollapsed'] ?? false;
+    final minimum = json['minimumPipettingVolumeUl'] ?? 1;
     if (json['version'] != 1 ||
         !ThemeMode.values.any((mode) => mode.name == themeName) ||
         scale is! num ||
@@ -74,7 +83,10 @@ class AppSettings {
         scale > 1.5 ||
         !volumeUnits.contains(volume) ||
         !concentrationUnits.contains(concentration) ||
-        collapsed is! bool) {
+        collapsed is! bool ||
+        minimum is! num ||
+        !minimum.isFinite ||
+        minimum < 0) {
       throw const FormatException('本机设置的内容或版本无效');
     }
     return AppSettings(
@@ -83,6 +95,7 @@ class AppSettings {
       defaultVolumeUnit: volume as String,
       defaultConcentrationUnit: concentration as String,
       sidebarCollapsed: collapsed,
+      minimumPipettingVolumeUl: minimum.toDouble(),
     );
   }
 }
@@ -186,5 +199,7 @@ class AppSettingsNotifier extends Notifier<AppSettings> {
       _update(state.copyWith(defaultConcentrationUnit: unit));
   Future<void> setSidebarCollapsed(bool collapsed) =>
       _update(state.copyWith(sidebarCollapsed: collapsed));
+  Future<void> setMinimumPipettingVolumeUl(double volume) =>
+      _update(state.copyWith(minimumPipettingVolumeUl: volume));
   Future<void> resetDefaults() => _update(const AppSettings());
 }

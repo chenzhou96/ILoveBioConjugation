@@ -9,6 +9,7 @@ class ReactionSettingsCard extends StatefulWidget {
   final String volumeUnit;
   final bool ratioType;
   final bool compact;
+  final Widget? referenceSelector;
   final ValueChanged<String> onVolumeChanged;
   final ValueChanged<String> onVolumeUnitChanged;
   final ValueChanged<bool> onRatioTypeChanged;
@@ -19,6 +20,7 @@ class ReactionSettingsCard extends StatefulWidget {
     required this.volumeUnit,
     required this.ratioType,
     this.compact = false,
+    this.referenceSelector,
     required this.onVolumeChanged,
     required this.onVolumeUnitChanged,
     required this.onRatioTypeChanged,
@@ -139,7 +141,11 @@ class _ReactionSettingsCardState extends State<ReactionSettingsCard> {
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 20),
+            if (widget.referenceSelector != null)
+              Expanded(child: widget.referenceSelector!)
+            else
+              const Spacer(),
             Tooltip(
               message: '填写母液浓度，再填终浓度、取样体积或投料比。质量与摩尔换算需分子量。',
               child: Icon(
@@ -156,6 +162,10 @@ class _ReactionSettingsCardState extends State<ReactionSettingsCard> {
       title: '反应设置',
 
       children: [
+        if (widget.referenceSelector != null) ...[
+          widget.referenceSelector!,
+          const SizedBox(height: 14),
+        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final twoColumns = constraints.maxWidth >= 560;

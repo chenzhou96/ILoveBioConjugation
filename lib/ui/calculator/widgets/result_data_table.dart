@@ -5,11 +5,54 @@ import 'package:ilovebioconjugation/ui/calculator/state.dart';
 class ResultDataTableWidget extends StatelessWidget {
   final List<ResultRow> rows;
   final bool compact;
+  final Set<int> lowVolumeRows;
+  final ValueChanged<int>? onWorkingStock;
   const ResultDataTableWidget({
     super.key,
     required this.rows,
     this.compact = false,
+    this.lowVolumeRows = const {},
+    this.onWorkingStock,
   });
+
+  Widget _volume(
+    BuildContext context,
+    ResultRow row,
+    int index, {
+    bool card = false,
+  }) => Wrap(
+    spacing: 5,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      Text(
+        card ? '取 ${_display(row.volume)}' : _display(row.volume),
+        style: TextStyle(
+          fontSize: card ? 17 : 12,
+          fontWeight: FontWeight.w600,
+          color: lowVolumeRows.contains(index)
+              ? AppColors.of(context).warningFg
+              : AppColors.of(context).successFg,
+        ),
+      ),
+      if (lowVolumeRows.contains(index))
+        InkWell(
+          key: ValueKey('low-volume-$index'),
+          onTap: onWorkingStock == null ? null : () => onWorkingStock!(index),
+          borderRadius: BorderRadius.circular(4),
+          child: Tooltip(
+            message: '低于移液阈值 · 计算工作液',
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Icon(
+                Icons.science_outlined,
+                size: 15,
+                color: AppColors.of(context).warningFg,
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +150,13 @@ class ResultDataTableWidget extends StatelessWidget {
                     compact: true,
                   ),
                 ),
-                cell(rows[index].volume, emphasis: true),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 3,
+                  ),
+                  child: _volume(context, rows[index], index),
+                ),
                 cell(rows[index].volumePct),
                 cell(rows[index].ratio),
               ],
@@ -154,7 +203,10 @@ class ResultDataTableWidget extends StatelessWidget {
               rows.length,
               (index) => Padding(
                 padding: EdgeInsets.only(top: index == 0 ? 0 : 16),
-                child: _AliquotCard(row: rows[index]),
+                child: _AliquotCard(
+                  row: rows[index],
+                  volume: _volume(context, rows[index], index, card: true),
+                ),
               ),
             ),
           );
@@ -178,40 +230,31 @@ class ResultDataTableWidget extends StatelessWidget {
               DataColumn(label: Text('体积占比'), numeric: true),
               DataColumn(label: Text('投料比'), numeric: true),
             ],
-            rows: rows
-                .map(
-                  (row) => DataRow(
-                    cells: [
-                      DataCell(
-                        Text(
-                          '${row.name}\n${row.role}',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                      DataCell(
-                        _ConcentrationPair(
-                          molar: row.stock,
-                          mass: row.stockMass,
-                        ),
-                      ),
-                      DataCell(
-                        _ConcentrationPair(
-                          molar: row.finalConc,
-                          mass: row.finalConcMass,
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          _display(row.volume),
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      DataCell(Text(row.volumePct)),
-                      DataCell(Text(row.ratio)),
-                    ],
+            rows: rows.asMap().entries.map((entry) {
+              final row = entry.value;
+              return DataRow(
+                cells: [
+                  DataCell(
+                    Text(
+                      '${row.name}\n${row.role}',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
-                )
-                .toList(),
+                  DataCell(
+                    _ConcentrationPair(molar: row.stock, mass: row.stockMass),
+                  ),
+                  DataCell(
+                    _ConcentrationPair(
+                      molar: row.finalConc,
+                      mass: row.finalConcMass,
+                    ),
+                  ),
+                  DataCell(_volume(context, row, entry.key)),
+                  DataCell(Text(row.volumePct)),
+                  DataCell(Text(row.ratio)),
+                ],
+              );
+            }).toList(),
           ),
         );
       },
@@ -257,7 +300,8 @@ class _ConcentrationPair extends StatelessWidget {
 
 class _AliquotCard extends StatelessWidget {
   final ResultRow row;
-  const _AliquotCard({required this.row});
+  final Widget volume;
+  const _AliquotCard({required this.row, required this.volume});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -282,14 +326,7 @@ class _AliquotCard extends StatelessWidget {
               row.name,
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
-            Text(
-              '取 ${_display(row.volume)}',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: AppColors.of(context).successFg,
-              ),
-            ),
+            volume,
           ],
         ),
         SizedBox(height: 12),

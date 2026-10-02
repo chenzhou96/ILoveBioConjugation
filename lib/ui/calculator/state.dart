@@ -1,3 +1,4 @@
+import 'package:ilovebioconjugation/core/planning.dart';
 import 'package:ilovebioconjugation/data/calculation_input_snapshot.dart';
 
 /// Input state for a single substrate card.
@@ -89,6 +90,9 @@ class SubstrateInput {
 /// A single row in the result table.
 class ResultRow {
   final String role;
+  final int sourceSlot;
+  final bool lowVolume;
+  final String warning;
   final String name;
 
   /// Formatted molar concentrations, independent of the selected ratio basis.
@@ -104,6 +108,9 @@ class ResultRow {
 
   const ResultRow({
     required this.role,
+    this.sourceSlot = 0,
+    this.lowVolume = false,
+    this.warning = '',
     required this.name,
     required this.stock,
     required this.finalConc,
@@ -146,6 +153,14 @@ class CalculatorState {
   final ResultMetrics metrics;
   final List<ResultRow> rows;
   final List<(String, String)> summaryRows;
+  final int referenceSlot;
+  final CalculationResult? rawResult;
+  CalculationResult? get calculationResult => rawResult;
+  final GradientSpec? gradientSpec;
+  final GradientPlan? gradientPlan;
+  final List<WorkingStockProvenance> workingStocks;
+  final List<WorkingStockProvenance> gradientWorkingStocks;
+  final String planningMessage;
 
   const CalculatorState({
     this.substrates = const [],
@@ -159,6 +174,13 @@ class CalculatorState {
     this.metrics = const ResultMetrics(),
     this.rows = const [],
     this.summaryRows = const [],
+    this.referenceSlot = 0,
+    this.rawResult,
+    this.gradientSpec,
+    this.gradientPlan,
+    this.workingStocks = const [],
+    this.gradientWorkingStocks = const [],
+    this.planningMessage = '',
   });
 
   CalculatorState copyWith({
@@ -173,6 +195,16 @@ class CalculatorState {
     ResultMetrics? metrics,
     List<ResultRow>? rows,
     List<(String, String)>? summaryRows,
+    int? referenceSlot,
+    CalculationResult? rawResult,
+    bool clearRawResult = false,
+    GradientSpec? gradientSpec,
+    bool clearGradientSpec = false,
+    GradientPlan? gradientPlan,
+    bool clearGradientPlan = false,
+    List<WorkingStockProvenance>? workingStocks,
+    List<WorkingStockProvenance>? gradientWorkingStocks,
+    String? planningMessage,
   }) {
     return CalculatorState(
       substrates: substrates ?? this.substrates,
@@ -186,6 +218,18 @@ class CalculatorState {
       metrics: metrics ?? this.metrics,
       rows: rows ?? this.rows,
       summaryRows: summaryRows ?? this.summaryRows,
+      referenceSlot: referenceSlot ?? this.referenceSlot,
+      rawResult: clearRawResult ? null : rawResult ?? this.rawResult,
+      gradientSpec: clearGradientSpec
+          ? null
+          : gradientSpec ?? this.gradientSpec,
+      gradientPlan: clearGradientPlan
+          ? null
+          : gradientPlan ?? this.gradientPlan,
+      workingStocks: workingStocks ?? this.workingStocks,
+      gradientWorkingStocks:
+          gradientWorkingStocks ?? this.gradientWorkingStocks,
+      planningMessage: planningMessage ?? this.planningMessage,
     );
   }
 }

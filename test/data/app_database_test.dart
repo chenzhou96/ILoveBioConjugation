@@ -183,6 +183,75 @@ void main() {
   });
 
   test(
+    'planning batch metadata uses existing JSON column and corrupt recipes fall back safely',
+    () async {
+      const input = SubstrateInputSnapshot(
+        enabled: true,
+        name: 'Label',
+        mw: '500',
+        mwUnit: 'Da',
+        storageConc: '10',
+        storageUnit: 'mM',
+        finalConc: '',
+        finalUnit: 'uM',
+        reactionRatio: '2',
+        storageVolume: '',
+        storageVolumeUnit: 'uL',
+      );
+      const recipe = WorkingStockProvenance(
+        slot: 1,
+        parentInput: input,
+        workingConcentration: '2',
+        workingUnit: 'mM',
+        dilutionFactor: 5,
+        parentVolumeMl: .001,
+        diluentVolumeMl: .004,
+        preparationVolumeMl: .005,
+        requiredVolumeMl: .002,
+        newAliquotMl: .001,
+        minimumVolumeMl: .001,
+        diluentName: 'PBS',
+      );
+      final planningInput = CalculationInputSnapshot(
+        reactionVolume: '0100',
+        reactionVolumeUnit: 'uL',
+        ratioType: true,
+        referenceSlot: 1,
+        minimumPipettingVolumeUl: 2.5,
+        substrates: const [input, input],
+        gradient: GradientInputSnapshot(
+          selectedSlot: 1,
+          unit: 'uM',
+          points: ['0', '.1', 'bad'],
+          replicates: 3,
+          extraPreparationFraction: .1,
+          workingStocks: [recipe],
+        ),
+      );
+      final id = await save(inputs: planningInput);
+      final restored = (await database.getHistory()).single;
+      expect(restored.inputSnapshot!.toJson(), planningInput.toJson());
+      expect(await database.db.getVersion(), 2);
+      final corrupted = planningInput.toJson();
+      corrupted['gradient'] = {
+        ...planningInput.gradient!.toJson(),
+        'workingStocks': [
+          {...recipe.toJson(), 'diluentVolumeMl': 100},
+        ],
+      };
+      await database.db.update(
+        'calculation_history',
+        {'input_snapshot': jsonEncode(corrupted)},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      final legacyFallback = (await database.getHistory()).single;
+      expect(legacyFallback.inputSnapshot, isNull);
+      expect(legacyFallback.substrates.single.name, 'trace stock');
+    },
+  );
+
+  test(
     'v1 migration preserves old records and allows exact new snapshots',
     () async {
       final directory = await Directory.systemTemp.createTemp(
