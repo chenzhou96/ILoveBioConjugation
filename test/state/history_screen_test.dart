@@ -62,9 +62,83 @@ void main() {
   );
 
   test('history number formatting preserves tiny nonzero values', () {
-    expect(formatHistoryNumber(1e-9, 4), '1.0000e-9');
-    expect(formatHistoryNumber(0, 4), '0.0000');
-    expect(formatHistoryNumber(12.5, 2), '12.50');
+    expect(formatHistoryNumber(1e-9), '1.000e-9');
+    expect(formatHistoryNumber(0), '0.000');
+    expect(formatHistoryNumber(12.5), '12.500');
+  });
+
+  testWidgets('history renders both bases for legacy, zero and missing MW', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1366, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const legacy = CalculationHistory(
+      id: 1,
+      createdAt: 'legacy',
+      ratioType: true,
+      reactionVolume: 1,
+      substrates: [
+        SubstrateResult(
+          sortOrder: 0,
+          name: 'IgG',
+          role: 'main',
+          molecularWeight: 150000,
+          mwUnit: 'kDa',
+          storageConcMass: 10,
+          finalConcMass: 1.123456789,
+        ),
+        SubstrateResult(
+          sortOrder: 1,
+          name: 'FITC',
+          role: 'secondary',
+          molecularWeight: 389.38,
+          storageConcMolar: 1,
+          finalConcMolar: 0,
+          storageVolume: 0.001,
+        ),
+        SubstrateResult(
+          sortOrder: 2,
+          name: '未知分子量',
+          role: 'secondary',
+          storageConcMass: 10,
+          finalConcMass: 1,
+        ),
+        SubstrateResult(
+          sortOrder: 3,
+          name: '已存双浓度',
+          role: 'secondary',
+          molecularWeight: 1000,
+          storageConcMass: 3.123456789,
+          storageConcMolar: 2.987654321,
+          finalConcMass: 0.00028665,
+          finalConcMolar: 0.001,
+        ),
+      ],
+    );
+    final database = FakeDatabase()..records.add(legacy);
+    await pumpHistory(
+      tester,
+      database,
+      screen: const HistoryDetailScreen(recordId: 1),
+    );
+    String cell(String key) =>
+        tester.widget<Text>(find.byKey(ValueKey(key))).data!;
+    expect(cell('history-stock-0'), '质量：10.000 mg/mL\n摩尔：66.667 µM');
+    expect(cell('history-final-0'), '质量：1.123 mg/mL\n摩尔：7.490 µM');
+    expect(cell('history-stock-1'), '质量：389.380 µg/mL\n摩尔：1.000 mM');
+    expect(cell('history-final-1'), '质量：0.000 mg/mL\n摩尔：0.000 mM');
+    expect(cell('history-stock-2'), '质量：10.000 mg/mL\n摩尔：无法换算（缺少分子量）');
+    expect(cell('history-stock-3'), '质量：3.123 mg/mL\n摩尔：2.988 mM');
+    expect(cell('history-final-3'), '质量：286.650 ng/mL\n摩尔：1.000 µM');
+    expect(find.text('1.000 mL'), findsOneWidget);
+    expect(find.text('1.000 µL'), findsOneWidget);
+    expect(legacy.substrates[0].storageConcMolar, isNull);
+    expect(legacy.substrates[0].finalConcMass, 1.123456789);
+    expect(legacy.substrates[3].storageConcMolar, 2.987654321);
+    expect(database.saveRequests, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('canceling clear leaves all history untouched', (tester) async {

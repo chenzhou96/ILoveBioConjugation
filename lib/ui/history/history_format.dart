@@ -1,3 +1,5 @@
+import 'package:ilovebioconjugation/core/display_format.dart';
+
 /// Handles imported/legacy timestamps without assuming a fixed string length.
 String formatHistoryDate(String value) {
   final parsed = DateTime.tryParse(value);
@@ -9,9 +11,19 @@ String formatHistoryDate(String value) {
 }
 
 /// Never display a nonzero historical value as a rounded zero.
-String formatHistoryNumber(double value, int decimalPlaces) {
-  final fixed = value.toStringAsFixed(decimalPlaces);
-  return value != 0 && double.tryParse(fixed) == 0
-      ? value.toStringAsExponential(decimalPlaces)
-      : fixed;
+String formatHistoryNumber(double value) {
+  return displayNumber(value);
+}
+
+String formatHistoryConcentrations({
+  double? molar,
+  double? mass,
+  double? molecularWeightDa,
+}) {
+  final pair = concentrationPair(
+    molar: molar,
+    mass: mass,
+    molecularWeightDa: molecularWeightDa,
+  );
+  return '质量：${displayMass(pair.mass)}\n摩尔：${displayMolar(pair.molar)}';
 }

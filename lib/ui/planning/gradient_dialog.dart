@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ilovebioconjugation/core/planning.dart';
+import 'package:ilovebioconjugation/core/display_format.dart';
 import 'package:ilovebioconjugation/export/experiment_markdown.dart';
 import 'package:ilovebioconjugation/theme/app_colors.dart';
 import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
 import 'package:ilovebioconjugation/ui/settings/app_settings.dart';
 import 'package:ilovebioconjugation/ui/planning/planning_format.dart';
+import 'gradient_overview_table.dart';
 import 'package:ilovebioconjugation/ui/planning/record_actions.dart';
 import 'package:ilovebioconjugation/ui/planning/working_stock_dialog.dart';
 
@@ -767,174 +769,12 @@ class _GradientDialogState extends ConsumerState<GradientDialog>
     GradientPlan plan,
     List<GradientGroup> groups,
     double width,
-  ) {
-    final colors = AppColors.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          '点击条件查看所有试剂的母液 / 终浓度双单位、比值与操作提醒',
-          style: TextStyle(fontSize: 10, color: colors.muted),
-        ),
-        const SizedBox(height: 7),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: width),
-            child: DataTable(
-              key: const ValueKey('gradient-overview-table'),
-              showCheckboxColumn: false,
-              horizontalMargin: 8,
-              columnSpacing: 14,
-              headingRowHeight: 44,
-              dataRowMinHeight: 58,
-              dataRowMaxHeight: 58,
-              headingTextStyle: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: colors.muted,
-              ),
-              border: TableBorder(
-                horizontalInside: BorderSide(color: colors.border),
-              ),
-              columns: [
-                const DataColumn(label: Text('条件 / 目标')),
-                const DataColumn(label: Text('变化试剂终浓度\n摩尔 / 质量')),
-                for (final reagent in plan.baseline.substrates)
-                  DataColumn(
-                    label: Tooltip(
-                      message: '${reagent.name} 每次取样量',
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 100),
-                        child: Text(
-                          '${reagent.name}\n取样量',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ),
-                const DataColumn(label: Text('补加溶剂')),
-                const DataColumn(label: Text('状态 / 明细')),
-              ],
-              rows: [
-                for (final group in groups)
-                  DataRow(
-                    onSelectChanged: (_) =>
-                        _showGroupDetails(group, plan.spec.unit),
-                    color: group.isValid
-                        ? null
-                        : WidgetStatePropertyAll(colors.errorBg),
-                    cells: [
-                      DataCell(
-                        Text(
-                          '条件 ${group.index + 1}\n${group.pointText} ${plan.spec.unit}${group.pointValue == 0 ? ' · 对照' : ''}',
-                          key: ValueKey('gradient-group-${group.index}'),
-                          style: TextStyle(
-                            fontSize: 11,
-                            height: 1.6,
-                            color: group.isValid ? colors.text : colors.errorFg,
-                          ),
-                        ),
-                      ),
-                      DataCell(
-                        Text(
-                          group.result == null
-                              ? '—'
-                              : '${planningConcentration(group.result!.substrateAt(plan.spec.selectedSlot).finalMolarMm)}\n${planningConcentration(group.result!.substrateAt(plan.spec.selectedSlot).finalMassMgMl, molar: false)}',
-                          style: const TextStyle(fontSize: 10, height: 1.5),
-                        ),
-                      ),
-                      for (final reagent in plan.baseline.substrates)
-                        DataCell(
-                          Text(
-                            group.result == null
-                                ? '—'
-                                : planningVolume(
-                                    group.result!
-                                        .substrateAt(reagent.slot)
-                                        .aliquotMl,
-                                  ),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color:
-                                  group.result?.warnings.any(
-                                        (w) => w.slot == reagent.slot,
-                                      ) ==
-                                      true
-                                  ? colors.warningFg
-                                  : colors.text,
-                            ),
-                          ),
-                        ),
-                      DataCell(
-                        Text(
-                          group.result == null
-                              ? '—'
-                              : planningVolume(group.result!.diluentVolumeMl),
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ),
-                      DataCell(
-                        SizedBox(
-                          width: 126,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Tooltip(
-                                  message:
-                                      group.error ??
-                                      group.result?.warnings
-                                          .map((w) => w.message)
-                                          .join('\n') ??
-                                      '',
-                                  child: Text(
-                                    group.isValid
-                                        ? (group.result!.warnings.isEmpty
-                                              ? '可行'
-                                              : '${group.result!.warnings.length} 项提醒')
-                                        : '不可行：${group.error}',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      height: 1.5,
-                                      color: !group.isValid
-                                          ? colors.errorFg
-                                          : group.result!.warnings.isNotEmpty
-                                          ? colors.warningFg
-                                          : colors.successFg,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                key: ValueKey(
-                                  'gradient-details-${group.index}',
-                                ),
-                                tooltip: '查看条件 ${group.index + 1} 完整明细',
-                                onPressed: () =>
-                                    _showGroupDetails(group, plan.spec.unit),
-                                constraints: const BoxConstraints(
-                                  minWidth: 26,
-                                  minHeight: 30,
-                                ),
-                                padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.open_in_new, size: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  ) => GradientOverviewTable(
+    plan: plan,
+    groups: groups,
+    width: width,
+    onOpenGroup: (group) => _showGroupDetails(group, plan.spec.unit),
+  );
 
   Widget _preparation(GradientPlan plan) {
     final colors = AppColors.of(context);
@@ -1110,7 +950,7 @@ class GradientGroupCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '条件 ${group.index + 1} · ${group.pointText} ${unit.replaceFirst('u', 'µ')}${group.pointValue == 0 ? ' · 0 对照' : ''}${group.isValid ? '' : ' · 不可行'}',
+            '条件 ${group.index + 1} · ${displayInputValue(group.pointText, unit)}${group.pointValue == 0 ? ' · 0 对照' : ''}${group.isValid ? '' : ' · 不可行'}',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -1156,7 +996,7 @@ class GradientGroupCard extends StatelessWidget {
                     columns: const [
                       DataColumn(label: Text('试剂')),
                       DataColumn(label: Text('每次取样')),
-                      DataColumn(label: Text('母液浓度（摩尔 / 质量）')),
+                      DataColumn(label: Text('实际母液浓度（摩尔 / 质量）')),
                       DataColumn(label: Text('终浓度（摩尔 / 质量）')),
                       DataColumn(label: Text('投料比')),
                     ],
@@ -1179,9 +1019,11 @@ class GradientGroupCard extends StatelessWidget {
                             DataCell(
                               Text(
                                 '${planningConcentration(s.stockMolarMm)}\n${planningConcentration(s.stockMassMgMl, molar: false)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   height: 1.4,
+                                  color: colors.errorFg,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),

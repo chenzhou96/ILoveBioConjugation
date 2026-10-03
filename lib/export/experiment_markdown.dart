@@ -1,4 +1,5 @@
 import '../core/planning.dart';
+import '../core/display_format.dart';
 import '../data/calculation_input_snapshot.dart';
 
 /// Clipboard and .md export share this serializer. It consumes raw immutable
@@ -24,7 +25,9 @@ String buildGradientMarkdown(GradientPlan plan) {
   if (plan.spec.unit == 'eq') {
     out.writeln('- eq 基准：${plan.baseline.ratioType ? '摩尔当量' : '质量倍数（不是摩尔当量）'}');
   }
-  out.writeln('- 输入梯度点：${plan.spec.points.map(escapeMarkdownCell).join('、')}');
+  out.writeln(
+    '- 输入梯度点：${plan.spec.points.map(displayInputNumber).map(escapeMarkdownCell).join('、')}',
+  );
   out.writeln('- 每条件重复数：${plan.spec.replicates}');
   out.writeln(
     '- 额外配制：${formatPlanNumber(plan.spec.extraPreparationFraction * 100)}%（仅汇总，单组配方不变）',
@@ -60,7 +63,7 @@ String buildGradientMarkdown(GradientPlan plan) {
   );
   for (final group in plan.groups) {
     out.writeln(
-      '### 条件 ${group.index + 1} · ${escapeMarkdownCell(group.pointText)} ${escapeMarkdownCell(plan.spec.unit)}\n',
+      '### 条件 ${group.index + 1} · ${escapeMarkdownCell(displayInputValue(group.pointText, plan.spec.unit))}\n',
     );
     if (group.result == null) {
       out.writeln('**不可执行**：${escapeMarkdownCell(group.error ?? '未生成有效结果')}\n');
@@ -114,7 +117,7 @@ String buildGradientCopyText(GradientPlan plan) {
   );
   for (final group in plan.groups) {
     out.writeln(
-      '\n条件 ${group.index + 1}：${plain(group.pointText)} ${plan.spec.unit}',
+      '\n条件 ${group.index + 1}：${plain(displayInputValue(group.pointText, plan.spec.unit))}',
     );
     final result = group.result;
     if (result == null) {
@@ -248,7 +251,7 @@ void _inputs(StringBuffer out, CalculationResult result) {
             ),
             input.substrates[slot].reactionRatio.isEmpty
                 ? '未填'
-                : input.substrates[slot].reactionRatio,
+                : displayInputNumber(input.substrates[slot].reactionRatio),
             _original(
               input.substrates[slot].storageVolume,
               input.substrates[slot].storageVolumeUnit,
@@ -377,7 +380,7 @@ void _table(StringBuffer out, List<String> headers, List<List<String>> rows) {
 
 String _role(int slot) => slot == 0 ? '主底物' : '副底物$slot';
 String _original(String value, String unit) =>
-    value.isEmpty ? '未填（$unit）' : '$value $unit';
+    value.isEmpty ? '未填（$unit）' : displayInputValue(value, unit);
 
 /// A label cannot terminate a row, inject HTML, or introduce a Markdown link.
 String escapeMarkdownCell(String value) => value
@@ -395,56 +398,8 @@ String escapeMarkdownCell(String value) => value
     .replaceAll(RegExp(r'\r\n|\r|\n'), '<br>')
     .replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
 
-/// Ten significant figures retain useful numeric detail without letting display
-/// precision leak back into any calculation. Nonzero values never become zero.
-String formatPlanNumber(double value) {
-  if (!value.isFinite) throw ArgumentError('不能导出非有限数值。');
-  if (value == 0) return '0';
-  final text = value.toStringAsPrecision(10);
-  final parts = text.split('e');
-  var mantissa = parts.first;
-  if (mantissa.contains('.')) {
-    mantissa = mantissa
-        .replaceFirst(RegExp(r'0+$'), '')
-        .replaceFirst(RegExp(r'\.$'), '');
-  }
-  return parts.length == 1 ? mantissa : '${mantissa}e${parts.last}';
-}
-
-String formatPlanVolume(double value) => _scaled(value, [
-  (1000, 'L'),
-  (1, 'mL'),
-  (0.001, 'µL'),
-  (0.000001, 'nL'),
-  (0.000000001, 'pL'),
-], zeroUnit: 'µL');
-String formatPlanMolar(double? value) => value == null
-    ? '无法换算（缺少分子量）'
-    : _scaled(value, [
-        (1000, 'M'),
-        (1, 'mM'),
-        (0.001, 'µM'),
-        (0.000001, 'nM'),
-        (0.000000001, 'pM'),
-      ], zeroUnit: 'mM');
-String formatPlanMass(double? value) => value == null
-    ? '无法换算（缺少分子量）'
-    : _scaled(value, [
-        (1000, 'g/mL'),
-        (1, 'mg/mL'),
-        (0.001, 'µg/mL'),
-        (0.000001, 'ng/mL'),
-        (0.000000001, 'pg/mL'),
-      ], zeroUnit: 'mg/mL');
-String _scaled(
-  double value,
-  List<(double, String)> units, {
-  required String zeroUnit,
-}) {
-  if (value == 0) return '0 $zeroUnit';
-  final unit = units.firstWhere(
-    (u) => value.abs() >= u.$1,
-    orElse: () => units.last,
-  );
-  return '${formatPlanNumber(value / unit.$1)} ${unit.$2}';
-}
+/// Display/export precision never changes the underlying solver values.
+String formatPlanNumber(double value) => displayNumber(value);
+String formatPlanVolume(double value) => displayVolume(value);
+String formatPlanMolar(double? value) => displayMolar(value);
+String formatPlanMass(double? value) => displayMass(value);

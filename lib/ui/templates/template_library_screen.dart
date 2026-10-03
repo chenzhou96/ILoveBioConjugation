@@ -1,3 +1,4 @@
+import 'package:ilovebioconjugation/core/display_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -67,7 +68,7 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen> {
   }
 
   String _value(double? value, String unit) =>
-      value == null ? '未指定' : '$value $unit';
+      value == null ? '未指定' : displayInputValue(value.toString(), unit);
 
   Widget _templateCard(SubstrateTemplate template) {
     final theme = Theme.of(context);
@@ -94,7 +95,7 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen> {
                   '目标终浓度：${_value(template.defaultFinalConc, template.defaultFinalUnit)}',
                 ),
                 Text(
-                  '投料比：${template.defaultReactionRatio?.toString() ?? '未指定'}',
+                  '投料比：${template.defaultReactionRatio == null ? '未指定' : displayNumber(template.defaultReactionRatio!)}',
                 ),
               ],
             ),

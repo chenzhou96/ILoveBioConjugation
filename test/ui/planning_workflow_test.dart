@@ -9,6 +9,7 @@ import 'package:ilovebioconjugation/app.dart';
 import 'package:ilovebioconjugation/data/app_database.dart';
 import 'package:ilovebioconjugation/export/markdown_export_service.dart';
 import 'package:ilovebioconjugation/theme/app_theme.dart';
+import 'package:ilovebioconjugation/theme/app_colors.dart';
 import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
 import 'package:ilovebioconjugation/ui/calculator/calculator_screen.dart';
 import 'package:ilovebioconjugation/ui/planning/record_actions.dart';
@@ -154,7 +155,7 @@ void main() {
       expect(table.rows, hasLength(5));
       expect(
         (table.rows[1].cells[1].child as Text).data,
-        '1 µM\n286.65 ng/mL',
+        '1.000 µM\n286.650 ng/mL',
         reason:
             'Small scientifically meaningful mass concentrations are not rounded away',
       );
@@ -319,8 +320,8 @@ void main() {
       await _tap(tester, find.text('历史记录'));
       await _tap(tester, find.textContaining('梯度 4 条件 × 3').first);
       expect(find.text('完整梯度条件'), findsOneWidget);
-      expect(find.text('0、1、2、bad eq'), findsOneWidget);
-      expect(find.text('12.3457%（只用于备液）'), findsOneWidget);
+      expect(find.text('0.000 eq、1.000 eq、2.000 eq、bad eq'), findsOneWidget);
+      expect(find.text('12.346%（只用于备液）'), findsOneWidget);
       await _tap(tester, find.text('恢复计算'));
       expect(find.text('单因素梯度方案'), findsOneWidget);
       expect(container.read(calculatorProvider).reactionVolume, '100');
@@ -412,15 +413,37 @@ void main() {
       await _enter(tester, _key('gradient-extra'), '10');
       await _tap(tester, _key('gradient-generate'));
       final before = container.read(calculatorProvider).gradientPlan!;
+      void expectStockHeader(int slot, String mass, String molar) {
+        final massLabel = tester.widget<Text>(
+          _key('gradient-stock-mass-$slot'),
+        );
+        final molarLabel = tester.widget<Text>(
+          _key('gradient-stock-molar-$slot'),
+        );
+        expect(massLabel.data, mass);
+        expect(molarLabel.data, molar);
+        for (final label in [massLabel, molarLabel]) {
+          expect(label.style!.color, AppColors.errorFg);
+          expect(label.style!.fontWeight, FontWeight.w700);
+        }
+      }
+
+      expectStockHeader(0, '1.500 mg/mL', '10.000 µM');
+      expectStockHeader(1, '2.867 mg/mL', '10.000 mM');
       await _tap(tester, find.text('备液汇总'));
       await _tap(tester, _key('gradient-stock-preview'));
       expect(find.text('请先指定工作液使用的稀释液'), findsOneWidget);
       await _enter(tester, _key('gradient-stock-diluent'), 'PBS');
       await _tap(tester, _key('gradient-stock-preview'));
+      await _tap(tester, find.text('逐组结果'));
+      expectStockHeader(1, '2.867 mg/mL', '10.000 mM');
+      await _tap(tester, find.text('备液汇总'));
       await _reveal(tester, _key('gradient-stock-adopt'));
       expect(_key('gradient-stock-adopt'), findsOneWidget);
       await _tap(tester, _key('gradient-stock-adopt'));
       final after = container.read(calculatorProvider).gradientPlan!;
+      expectStockHeader(1, '28.665 µg/mL', '100.000 µM');
+      expectStockHeader(0, '1.500 mg/mL', '10.000 µM');
       expect(after, isNot(same(before)));
       expect(after.groups, hasLength(4));
       expect(after.spec.replicates, 3);
@@ -751,7 +774,7 @@ void main() {
         await _enter(tester, _key('working-stock-diluent'), 'PBS');
         await _enter(tester, _key('working-stock-factor'), '20');
         await _tap(tester, _key('working-stock-preview'));
-        expect(find.textContaining('20 倍稀释'), findsOneWidget);
+        expect(find.textContaining('20.000 倍稀释'), findsOneWidget);
         await _tap(tester, find.text('取消'));
         expect(container.read(calculatorProvider).rawResult, same(baseline));
         expect(container.read(calculatorProvider).workingStocks, isEmpty);

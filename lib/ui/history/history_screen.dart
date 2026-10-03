@@ -1,3 +1,4 @@
+import 'package:ilovebioconjugation/core/display_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -112,7 +113,7 @@ class HistoryScreen extends ConsumerWidget {
                   ? '比值不适用'
                   : referenceRatio == 1
                   ? '= 1'
-                  : '= ${formatHistoryNumber(referenceRatio, 4)}（历史原值）';
+                  : '= ${formatHistoryNumber(referenceRatio)}（历史原值）';
               final reference =
                   record.substrates
                       .where((s) => s.sortOrder == referenceSlot)
@@ -164,12 +165,5 @@ class HistoryScreen extends ConsumerWidget {
   }
 }
 
-String _formatVolumeSmart(double? volMl, String unit) {
-  if (volMl == null) return 'N/A';
-  final absV = volMl.abs();
-  if (absV >= 1000) return '${formatHistoryNumber(volMl / 1000, 2)} L';
-  if (absV >= 1) return '${formatHistoryNumber(volMl, 2)} mL';
-  if (absV >= 0.001) return '${formatHistoryNumber(volMl * 1000, 2)} uL';
-  if (absV >= 0.000001) return '${formatHistoryNumber(volMl * 1000000, 2)} nL';
-  return '${formatHistoryNumber(volMl * 1000000000, 2)} pL';
-}
+String _formatVolumeSmart(double? volMl, String unit) =>
+    volMl == null ? 'N/A' : displayVolume(volMl);

@@ -73,11 +73,11 @@ void main() {
           );
           final row = calculateSingle();
 
-          expect(row.stock, '200.00 uM');
-          expect(row.stockMass, '10.00 mg/mL');
-          expect(row.finalConc, '20.00 uM');
-          expect(row.finalConcMass, '1.00 mg/mL');
-          expect(row.volume, '10.00 uL');
+          expect(row.stock, '200.000 uM');
+          expect(row.stockMass, '10.000 mg/mL');
+          expect(row.finalConc, '20.000 uM');
+          expect(row.finalConcMass, '1.000 mg/mL');
+          expect(row.volume, '10.000 uL');
           expect(copyCells(), [
             row.role,
             row.name,
@@ -122,11 +122,11 @@ void main() {
             mwUnit: 'Da',
           );
           final row = calculateSingle();
-          expect(row.stock, '25.00 $molarUnit');
-          expect(row.stockMass, '25.00 $massUnit');
-          expect(row.finalConc, '2.50 $molarUnit');
-          expect(row.finalConcMass, '2.50 $massUnit');
-          expect(row.volume, '10.00 uL');
+          expect(row.stock, '25.000 $molarUnit');
+          expect(row.stockMass, '25.000 $massUnit');
+          expect(row.finalConc, '2.500 $molarUnit');
+          expect(row.finalConcMass, '2.500 $massUnit');
+          expect(row.volume, '10.000 uL');
         });
       }
     }
@@ -141,10 +141,10 @@ void main() {
         mwUnit: 'Da',
       );
       final row = calculateSingle();
-      expect(row.stock, '1.00e-4 pM');
-      expect(row.stockMass, '1.00e-4 pg/mL');
-      expect(row.finalConc, '1.00e-5 pM');
-      expect(row.finalConcMass, '1.00e-5 pg/mL');
+      expect(row.stock, '1.000e-4 pM');
+      expect(row.stockMass, '1.000e-4 pg/mL');
+      expect(row.finalConc, '1.000e-5 pM');
+      expect(row.finalConcMass, '1.000e-5 pg/mL');
       expect(notifier.buildCopyText(), contains(row.finalConcMass));
     });
 
@@ -156,9 +156,9 @@ void main() {
         unit: 'mg/mL',
       );
       final row = calculateSingle();
-      expect(row.finalConc, '0.00 pM');
-      expect(row.finalConcMass, '0.00 pg/mL');
-      expect(row.volume, '0.00 pL');
+      expect(row.finalConc, '0.000 mM');
+      expect(row.finalConcMass, '0.000 mg/mL');
+      expect(row.volume, '0.000 uL');
       expect(notifier.buildCopyText(), isNot(contains(unavailable)));
     });
 
@@ -173,11 +173,11 @@ void main() {
           mw: '',
         );
         final row = calculateSingle();
-        expect(row.stock, molarRatio ? '10.00 mM' : unavailable);
-        expect(row.stockMass, molarRatio ? unavailable : '10.00 mg/mL');
-        expect(row.finalConc, molarRatio ? '1.00 mM' : unavailable);
-        expect(row.finalConcMass, molarRatio ? unavailable : '1.00 mg/mL');
-        expect(row.volume, '10.00 uL');
+        expect(row.stock, molarRatio ? '10.000 mM' : unavailable);
+        expect(row.stockMass, molarRatio ? unavailable : '10.000 mg/mL');
+        expect(row.finalConc, molarRatio ? '1.000 mM' : unavailable);
+        expect(row.finalConcMass, molarRatio ? unavailable : '1.000 mg/mL');
+        expect(row.volume, '10.000 uL');
         expect(
           copyCells().where((value) => value == unavailable),
           hasLength(2),
@@ -195,10 +195,10 @@ void main() {
       );
       notifier.setSubstrateField(0, 'storageVolume', '10');
       final row = calculateSingle();
-      expect(row.finalConc, '20.00 uM');
-      expect(row.finalConcMass, '1.00 mg/mL');
-      expect(row.stock, '200.00 uM');
-      expect(row.stockMass, '10.00 mg/mL');
+      expect(row.finalConc, '20.000 uM');
+      expect(row.finalConcMass, '1.000 mg/mL');
+      expect(row.stock, '200.000 uM');
+      expect(row.stockMass, '10.000 mg/mL');
     });
 
     test(
@@ -218,14 +218,14 @@ void main() {
         notifier.calculate();
         expect(current().statusLevel, StatusLevel.success);
         final secondary = current().rows.last;
-        expect(secondary.stock, '40.00 mM');
-        expect(secondary.stockMass, '20.00 mg/mL');
-        expect(secondary.finalConc, molarRatio ? '40.00 uM' : '4.00 mM');
+        expect(secondary.stock, '40.000 mM');
+        expect(secondary.stockMass, '20.000 mg/mL');
+        expect(secondary.finalConc, molarRatio ? '40.000 uM' : '4.000 mM');
         expect(
           secondary.finalConcMass,
-          molarRatio ? '20.00 ug/mL' : '2.00 mg/mL',
+          molarRatio ? '20.000 ug/mL' : '2.000 mg/mL',
         );
-        expect(secondary.volume, molarRatio ? '100.00 nL' : '10.00 uL');
+        expect(secondary.volume, molarRatio ? '100.000 nL' : '10.000 uL');
       },
     );
 
@@ -238,16 +238,16 @@ void main() {
           finalConc: '1',
           unit: 'mg/mL',
         );
-        expect(calculateSingle().finalConc, '20.00 uM');
+        expect(calculateSingle().finalConc, '20.000 uM');
         notifier.setSubstrateField(0, 'mw', '100');
         expect(current().rows, isEmpty);
         expect(notifier.buildCopyText(), isEmpty);
         final revised = calculateSingle();
-        expect(revised.stock, '100.00 uM');
-        expect(revised.finalConc, '10.00 uM');
-        expect(revised.stockMass, '10.00 mg/mL');
-        expect(revised.finalConcMass, '1.00 mg/mL');
-        expect(notifier.buildCopyText(), isNot(contains('20.00 uM')));
+        expect(revised.stock, '100.000 uM');
+        expect(revised.finalConc, '10.000 uM');
+        expect(revised.stockMass, '10.000 mg/mL');
+        expect(revised.finalConcMass, '1.000 mg/mL');
+        expect(notifier.buildCopyText(), isNot(contains('20.000 uM')));
       },
     );
   }
@@ -256,16 +256,16 @@ void main() {
     'removing molecular weight clears previously available converted concentrations',
     () {
       setMain(molarRatio: false, stock: '10', finalConc: '1', unit: 'mg/mL');
-      expect(calculateSingle().finalConc, '20.00 uM');
+      expect(calculateSingle().finalConc, '20.000 uM');
       notifier.setSubstrateField(0, 'mw', '');
       expect(current().rows, isEmpty);
       expect(notifier.buildCopyText(), isEmpty);
       final revised = calculateSingle();
       expect(revised.stock, unavailable);
       expect(revised.finalConc, unavailable);
-      expect(revised.stockMass, '10.00 mg/mL');
-      expect(revised.finalConcMass, '1.00 mg/mL');
-      expect(notifier.buildCopyText(), isNot(contains('20.00 uM')));
+      expect(revised.stockMass, '10.000 mg/mL');
+      expect(revised.finalConcMass, '1.000 mg/mL');
+      expect(notifier.buildCopyText(), isNot(contains('20.000 uM')));
     },
   );
 

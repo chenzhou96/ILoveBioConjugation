@@ -51,7 +51,7 @@ CalculationInputSnapshot input({
 
 void main() {
   test(
-    'record omits all rejected metadata and preserves exact original units/text',
+    'record formats display to three decimals and preserves raw input text',
     () {
       final result = solveCalculation(input());
       final markdown = buildCalculationMarkdown(result);
@@ -59,10 +59,10 @@ void main() {
         expect(markdown, isNot(contains(label)));
       }
       expect(markdown, contains('计划配方'));
-      expect(markdown, contains('0100.00 uL'));
-      expect(markdown, contains('000150.00 kDa'));
-      expect(markdown, contains('0010.000 mg/mL'));
-      expect(markdown, contains('1.0000 mg/mL'));
+      expect(markdown, contains('100.000 µL'));
+      expect(markdown, contains('150.000 kDa'));
+      expect(markdown, contains('10.000 mg/mL'));
+      expect(markdown, contains('1.000 mg/mL'));
       expect(markdown, contains('未填（uM）'));
       expect(markdown, contains('未填（uL）'));
       expect(markdown, contains('投料比参照：IgG（主底物；归一为 1）'));
@@ -72,19 +72,23 @@ void main() {
           .singleWhere(
             (line) =>
                 line.startsWith('| 副底物1 | TCEP') &&
-                line.contains('19.11 µg/mL'),
+                line.contains('19.110 µg/mL'),
           );
       expect(tcepResult, endsWith('|  |  |'));
       expect(markdown, contains('最小移液量'));
+      expect(result.input.reactionVolume, '0100.00');
+      expect(result.input.substrates[0].mw, '000150.00');
+      expect(result.input.substrates[0].storageConc, '0010.000');
+      expect(result.input.substrates[0].finalConc, '1.0000');
     },
   );
 
   test('both concentration bases are exported from raw solver values', () {
     final markdown = buildCalculationMarkdown(solveCalculation(input()));
-    expect(markdown, contains('2.8665 mg/mL'));
-    expect(markdown, contains('66.66666667 µM'));
-    expect(markdown, contains('19.11 µg/mL'));
-    expect(markdown, contains('666.6666667 nL'));
+    expect(markdown, contains('2.867 mg/mL'));
+    expect(markdown, contains('66.667 µM'));
+    expect(markdown, contains('19.110 µg/mL'));
+    expect(markdown, contains('666.667 nL'));
     expect(markdown, isNot(contains('2.87 mg/mL')));
   });
 
@@ -97,9 +101,9 @@ void main() {
     );
     final markdown = buildCalculationMarkdown(solveCalculation(original));
     expect(markdown, contains('无法换算（缺少分子量）'));
-    expect(markdown, contains('10 mg/mL'));
-    expect(markdown, contains('1 mg/mL'));
-    expect(markdown, isNot(contains('0 mM')));
+    expect(markdown, contains('10.000 mg/mL'));
+    expect(markdown, contains('1.000 mg/mL'));
+    expect(markdown, isNot(contains('0.000 mM')));
   });
 
   test('zero control and invalid groups remain in whole-batch export', () {
@@ -114,19 +118,19 @@ void main() {
       ),
     );
     final markdown = buildGradientMarkdown(plan);
-    expect(markdown, contains('条件 1 · 0 eq'));
-    expect(markdown, contains('条件 4 · 10 eq'));
+    expect(markdown, contains('条件 1 · 0.000 eq'));
+    expect(markdown, contains('条件 4 · 10.000 eq'));
     expect(markdown, contains('条件 3 · broken eq'));
     expect(markdown, contains('**不可执行**'));
     expect(markdown, contains('仅计入有效条件'));
     expect(markdown, contains('实际反应数：6'));
-    expect(markdown, contains('额外配制：10%（仅汇总，单组配方不变）'));
-    expect(markdown, contains('660 µL'));
-    expect(markdown, contains('66 µL'));
-    expect(markdown, contains('0 µL'));
+    expect(markdown, contains('额外配制：10.000%（仅汇总，单组配方不变）'));
+    expect(markdown, contains('660.000 µL'));
+    expect(markdown, contains('66.000 µL'));
+    expect(markdown, contains('0.000 µL'));
     expect(markdown, isNot(contains('Infinity')));
     final short = buildGradientCopyText(plan);
-    expect(short, contains('条件 4：10 eq'));
+    expect(short, contains('条件 4：10.000 eq'));
     expect(short, contains('条件 3：broken eq'));
     expect(short, contains('未计入 1 个不可执行条件'));
     expect(short, contains('投料比参照：IgG；摩尔比'));
@@ -170,8 +174,8 @@ void main() {
     );
     final markdown = buildCalculationMarkdown(solveCalculation(workingInput));
     expect(markdown, contains('已采用工作液'));
-    expect(markdown, contains('10 mM | 10 | 1 mM'));
-    expect(markdown, contains('1 µL | PBS | 9 µL | 10 µL'));
+    expect(markdown, contains('10.000 mM | 10.000 | 1.000 mM'));
+    expect(markdown, contains('1.000 µL | PBS | 9.000 µL | 10.000 µL'));
     expect(markdown, contains('DMSO'));
     expect(markdown, contains('兼容性'));
   });
@@ -215,9 +219,9 @@ void main() {
       expect(markdown, contains('TCEP（共同工作液）'));
       expect(markdown, contains('批次需求量'));
       expect(markdown, contains('PBS'));
-      expect(markdown, contains('191.1 µg/mL'));
-      expect(markdown, contains('17.6 µL'));
-      expect(markdown, contains('0 µL'));
+      expect(markdown, contains('191.100 µg/mL'));
+      expect(markdown, contains('17.600 µL'));
+      expect(markdown, contains('0.000 µL'));
       expect(buildGradientCopyText(adopted), contains('共同工作液 · TCEP'));
       expect(identical(adopted.baseline, baseline), isTrue);
       expect(baseline.input.substrates[1].storageConc, '10');
@@ -265,8 +269,8 @@ void main() {
       expect(markdown, contains('原采用配制量'));
       expect(markdown, contains('当前计划需求量'));
       expect(markdown, contains('原配制量不足'));
-      expect(markdown, contains('原方案仅配制 10 µL'));
-      expect(markdown, contains('当前计划需 66.66666667 µL'));
+      expect(markdown, contains('原方案仅配制 10.000 µL'));
+      expect(markdown, contains('当前计划需 66.667 µL'));
       expect(recipe.preparationVolumeMl, 0.01);
     },
   );
@@ -289,8 +293,8 @@ void main() {
     expect(formatPlanVolume(1e-30), contains('e-21 pL'));
     expect(formatPlanMolar(1e-30), contains('e-21 pM'));
     expect(formatPlanMass(1e-30), contains('e-21 pg/mL'));
-    expect(formatPlanNumber(0), '0');
-    expect(formatPlanVolume(0), '0 µL');
+    expect(formatPlanNumber(0), '0.000');
+    expect(formatPlanVolume(0), '0.000 µL');
     expect(() => formatPlanNumber(double.infinity), throwsArgumentError);
   });
 }

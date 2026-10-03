@@ -1,3 +1,4 @@
+import 'package:ilovebioconjugation/core/display_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ilovebioconjugation/data/substrate_template.dart';
@@ -205,10 +206,13 @@ class _TemplatePickerDialogState extends ConsumerState<_TemplatePickerDialog> {
                     itemBuilder: (context, index) {
                       final t = templates[index];
                       final storageText = t.storageConcentration != null
-                          ? '${t.storageConcentration} ${t.storageUnit}'
+                          ? displayInputValue(
+                              t.storageConcentration.toString(),
+                              t.storageUnit,
+                            )
                           : t.storageUnit;
                       final mwText = t.molecularWeight != null
-                          ? 'MW ${t.molecularWeight} ${t.mwUnit}'
+                          ? 'MW ${displayInputValue(t.molecularWeight.toString(), t.mwUnit)}'
                           : '';
 
                       return InkWell(

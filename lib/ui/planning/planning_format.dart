@@ -1,17 +1,10 @@
-import 'package:ilovebioconjugation/export/experiment_markdown.dart'
-    show formatPlanMolar, formatPlanMass;
+import 'package:ilovebioconjugation/core/display_format.dart';
 
-String planningNumber(double value) {
-  if (value == 0) return '0';
-  if (value.abs() < 0.0001 || value.abs() >= 1000000) {
-    return value.toStringAsExponential(4);
-  }
-  return value.toStringAsFixed(4).replaceFirst(RegExp(r'\.?0+$'), '');
-}
+String planningNumber(double value) => displayNumber(value);
 
-String planningVolume(double ml) => '${planningNumber(ml * 1000)} µL';
+String planningVolume(double ml) => displayVolume(ml);
 
 /// Scale the solved base value before display. Fixed decimals in mg/mL would
 /// distort small but meaningful concentrations (e.g. 286.65 ng/mL).
 String planningConcentration(double? value, {bool molar = true}) =>
-    molar ? formatPlanMolar(value) : formatPlanMass(value);
+    molar ? displayMolar(value) : displayMass(value);

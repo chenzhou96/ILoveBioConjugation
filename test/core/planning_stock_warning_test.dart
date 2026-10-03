@@ -75,8 +75,8 @@ void main() {
       expect(result.totalVolumeMl, 1);
       final warning = _shortage(result.warnings).single;
       expect(warning.slot, 1);
-      expect(warning.message, contains('0.005 mL'));
-      expect(warning.message, contains('0.01 mL'));
+      expect(warning.message, contains('5.000 µL'));
+      expect(warning.message, contains('10.000 µL'));
       expect(warning.message, contains('单次需求'));
       expect(recipe.toJson(), before);
       expect(identical(result.input.workingStocks.single, recipe), isTrue);

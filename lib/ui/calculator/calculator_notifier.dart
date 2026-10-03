@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ilovebioconjugation/core/planning.dart';
 import 'package:ilovebioconjugation/core/planning.dart' as planning;
 import 'package:ilovebioconjugation/core/validators.dart';
+import 'package:ilovebioconjugation/core/display_format.dart';
 import 'package:ilovebioconjugation/data/calculation_history.dart';
 import 'package:ilovebioconjugation/data/calculation_input_snapshot.dart';
 import 'package:ilovebioconjugation/data/substrate_template.dart';
@@ -304,7 +305,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           ),
           volume: _formatWithUnit(chem.aliquotMl, 'volume'),
           volumePct: _formatPercent(chem.aliquotMl, result.totalVolumeMl),
-          ratio: chem.ratio == null ? 'N/A' : _formatNumber(chem.ratio!, 4),
+          ratio: chem.ratio == null ? 'N/A' : displayNumber(chem.ratio!),
           lowVolume: low,
           warning: [
             if (low)
@@ -996,48 +997,19 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
   String _formatWithUnit(double? value, String unitType) {
     if (value == null) return 'N/A';
-    final absV = value.abs();
-    switch (unitType) {
-      case 'volume':
-        if (absV >= 1000) return '${_formatNumber(value / 1000, 2)} L';
-        if (absV >= 1) return '${_formatNumber(value, 2)} mL';
-        if (absV >= 0.001) return '${_formatNumber(value * 1000, 2)} uL';
-        if (absV >= 0.000001) return '${_formatNumber(value * 1000000, 2)} nL';
-        return '${_formatNumber(value * 1000000000, 2)} pL';
-      case 'mass_conc':
-        if (absV >= 1000) return '${_formatNumber(value / 1000, 2)} g/mL';
-        if (absV >= 1) return '${_formatNumber(value, 2)} mg/mL';
-        if (absV >= 0.001) return '${_formatNumber(value * 1000, 2)} ug/mL';
-        if (absV >= 0.000001) {
-          return '${_formatNumber(value * 1000000, 2)} ng/mL';
-        }
-        return '${_formatNumber(value * 1000000000, 2)} pg/mL';
-      case 'molar_conc':
-        if (absV >= 1000) return '${_formatNumber(value / 1000, 2)} M';
-        if (absV >= 1) return '${_formatNumber(value, 2)} mM';
-        if (absV >= 0.001) return '${_formatNumber(value * 1000, 2)} uM';
-        if (absV >= 0.000001) return '${_formatNumber(value * 1000000, 2)} nM';
-        return '${_formatNumber(value * 1000000000, 2)} pM';
-      case 'mw':
-        return absV >= 1000
-            ? '${_formatNumber(value / 1000, 2)} kDa'
-            : '${_formatNumber(value, 2)} Da';
-      default:
-        return _formatNumber(value, 4);
-    }
-  }
-
-  String _formatNumber(double value, int decimalPlaces) {
-    final fixed = value.toStringAsFixed(decimalPlaces);
-    return value != 0 && double.tryParse(fixed) == 0
-        ? value.toStringAsExponential(decimalPlaces)
-        : fixed;
+    return switch (unitType) {
+      'volume' => displayVolume(value, asciiMicro: true),
+      'mass_conc' => displayMass(value, asciiMicro: true),
+      'molar_conc' => displayMolar(value, asciiMicro: true),
+      'mw' => displayMolecularWeight(value),
+      _ => displayNumber(value),
+    };
   }
 
   String _formatPercent(double? numerator, double? denominator) {
     if (numerator == null || denominator == null || denominator <= 0) {
       return 'N/A';
     }
-    return '${_formatNumber(numerator / denominator * 100, 2)}%';
+    return '${displayNumber(numerator / denominator * 100)}%';
   }
 }

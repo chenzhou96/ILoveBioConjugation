@@ -471,7 +471,7 @@ void main() {
     notifier.setSubstrateField(1, 'reactionRatio', '1e-9');
     notifier.calculate();
     expect(current().statusLevel, StatusLevel.success);
-    expect(current().rows.last.ratio, '1.0000e-9');
+    expect(current().rows.last.ratio, '1.000e-9');
   });
 
   test(

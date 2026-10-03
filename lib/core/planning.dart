@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../data/calculation_input_snapshot.dart';
 import 'chemical.dart';
+import 'display_format.dart';
 import 'reaction.dart';
 import 'validators.dart';
 
@@ -354,6 +355,35 @@ GradientPlan generateGradient(
       batch: true,
     ),
   );
+}
+
+/// Reconstruct a saved batch without touching calculator state or persistence.
+/// Use its saved threshold and adopted factors, never today's app settings.
+GradientPlan restoreGradientPlan(CalculationInputSnapshot input) {
+  final gradient = input.gradient;
+  if (gradient == null) throw ArgumentError('此记录没有保存梯度条件。');
+  var plan = generateGradient(
+    solveCalculation(input),
+    GradientSpec(
+      selectedSlot: gradient.selectedSlot,
+      proteinSlot: gradient.proteinSlot,
+      unit: gradient.unit,
+      points: gradient.points,
+      replicates: gradient.replicates,
+      extraPreparationFraction: gradient.extraPreparationFraction,
+    ),
+  );
+  for (final stock in gradient.workingStocks) {
+    plan = applyGradientWorkingStockFactor(
+      plan,
+      slot: stock.slot,
+      factor: stock.dilutionFactor,
+      diluentName: stock.diluentName,
+      minimumVolumeMl: stock.minimumVolumeMl,
+      warningMinimumVolumeMl: input.minimumPipettingVolumeUl / 1000,
+    );
+  }
+  return plan;
 }
 
 /// Arithmetic points include `start`, followed by `count - 1` additions.
@@ -805,8 +835,8 @@ List<PlanningWarning> _preparedStockWarnings(
         slot: recipe.slot,
         code: 'insufficient_working_stock',
         message:
-            '$name 的原工作液配制量为 ${recipe.preparationVolumeMl} mL，'
-            '${batch ? '当前有效组总需求（含重复和额外配制）' : '当前单次需求'}为 $need mL；'
+            '$name 的原工作液配制量为 ${displayVolume(recipe.preparationVolumeMl)}，'
+            '${batch ? '当前有效组总需求（含重复和额外配制）' : '当前单次需求'}为 ${displayVolume(need)}；'
             '原配制量不足，请另行确认补配。',
       ),
     );
