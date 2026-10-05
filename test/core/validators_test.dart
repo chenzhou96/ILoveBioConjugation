@@ -16,6 +16,15 @@ void main() {
       expect(parseFloatOrNull('-3.5'), -3.5);
       expect(parseFloatOrNull('0'), 0);
     });
+    test('nonzero significands must not silently underflow to zero', () {
+      for (final text in ['1e-999', '-1e-999', '2e-324', ' 0.001e-999 ']) {
+        expect(() => parseFloatOrNull(text), throwsArgumentError);
+      }
+      for (final text in ['0e-999', '-0.000e-999', '+0.0e999']) {
+        expect(parseFloatOrNull(text), 0);
+      }
+      expect(parseFloatOrNull('5e-324'), double.minPositive);
+    });
     for (final text in [
       'NaN',
       'Infinity',

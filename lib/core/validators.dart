@@ -11,6 +11,12 @@ double? parseFloatOrNull(String value) {
   if (parsed == null || !parsed.isFinite) {
     throw ArgumentError('必须是有限数字。');
   }
+  // double.tryParse silently rounds a nonzero decimal below its range to
+  // zero. Keep true zero controls valid, including an arbitrary exponent.
+  final significand = trimmed.split(RegExp('[eE]')).first;
+  if (parsed == 0 && RegExp('[1-9]').hasMatch(significand)) {
+    throw ArgumentError('数值超出可计算范围，不能将非零输入当作零。');
+  }
   return parsed;
 }
 

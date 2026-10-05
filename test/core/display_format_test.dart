@@ -27,6 +27,27 @@ void main() {
     expect(displayVolume(1e-13), '1.000e-4 pL');
   });
 
+  test('unrepresentable input labels preserve exact text and units', () {
+    for (final unit in ['L', 'M', 'g/mL', 'kDa']) {
+      expect(displayInputValue('1e308', unit), '1e308 $unit');
+      expect(displayInputValue('-1e308', unit), '-1e308 $unit');
+    }
+    for (final unit in ['pL', 'pM', 'pg/mL']) {
+      expect(displayInputValue('1e-320', unit), '1e-320 $unit');
+    }
+    for (final unit in ['eq', 'pM', 'M']) {
+      expect(displayInputValue('1e-999', unit), '1e-999 $unit');
+      expect(
+        displayInputValue('0e-999', unit),
+        unit == 'eq' ? '0.000 eq' : '0.000 mM',
+      );
+    }
+    expect(displayInputNumber('1e-999'), '1e-999');
+    expect(displayInputNumber('0e-999'), '0.000');
+    expect(displayInputValue('1e-300', 'pM'), '1.000e-300 pM');
+    expect(displayInputValue('1e300', 'M'), '1.000e+300 M');
+  });
+
   test('concentrations scale before rounding and preserve zero vs missing', () {
     expect(displayMass(0.00028665), '286.650 ng/mL');
     expect(displayMolar(0.001), '1.000 µM');

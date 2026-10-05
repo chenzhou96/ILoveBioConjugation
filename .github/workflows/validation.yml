@@ -1,0 +1,62 @@
+name: Flutter validation
+
+on:
+  push:
+    branches: [master, improve/lab-calculator-reliability]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Linux checks (Flutter 3.44.0)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DART_SUPPRESS_ANALYTICS: 'true'
+    steps:
+      - name: Check out reviewed revision
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Install test runtime and CJK font
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libsqlite3-dev fonts-noto-cjk
+      - name: Install pinned official Flutter SDK
+        run: |
+          git clone --depth 1 --branch 3.44.0 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          test "$(git -C "$RUNNER_TEMP/flutter" rev-parse HEAD)" = '559ffa3f75e7402d65a8def9c28389a9b2e6fe42'
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Prepare Flutter and locked dependencies
+        run: |
+          flutter --version
+          flutter precache --linux
+          flutter pub get --enforce-lockfile
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Analyze application
+        run: flutter analyze --no-pub
+      - name: Run full unit and widget suite
+        run: flutter test --no-pub --reporter expanded
+      - name: Run independent numerical verification
+        run: dart run test/run_verification.dart
+      - name: Exercise optional real-font screenshot flows
+        run: |
+          flutter test --no-pub --reporter expanded \
+            test/ui/workspace_screenshot_test.dart \
+            test/ui/planning_screenshot_test.dart \
+            test/ui/history_gradient_screenshot_test.dart \
+            --dart-define=CAPTURE_WORKSPACE=true \
+            --dart-define=CAPTURE_PLANNING=true \
+            --dart-define=CAPTURE_HISTORY=true \
+            --dart-define=SCREENSHOT_FONT=/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+      - name: Compile actual application entry point
+        run: |
+          flutter assemble --output=build/qa-kernel \
+            -dTargetPlatform=linux-x64 -dBuildMode=debug \
+            -dTargetFile=lib/main.dart kernel_snapshot_program

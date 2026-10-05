@@ -123,6 +123,22 @@ void main() {
     },
   );
 
+  test(
+    'an underflowing final target is rejected rather than saved as zero',
+    () {
+      prepareValidCalculation();
+      final savedCount = database.saveRequests.length;
+      notifier.setSubstrateField(0, 'finalConc', '1e-999');
+      notifier.calculate();
+      expect(current().statusLevel, StatusLevel.error);
+      expect(current().errorMessage, contains('范围'));
+      expect(current().substrates[0].finalConc, '1e-999');
+      expect(current().rows, isEmpty);
+      expect(notifier.buildCopyText(), isEmpty);
+      expect(database.saveRequests.length, savedCount);
+    },
+  );
+
   test('template blanks replace stale values, including previous aliquot', () {
     prepareValidCalculation();
     notifier.setSubstrateField(0, 'mw', '123');

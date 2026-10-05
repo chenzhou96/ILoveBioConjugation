@@ -137,6 +137,30 @@ void main() {
     expect(short, contains('mg/mL'));
   });
 
+  for (final (unit, point) in [
+    ('M', '1e308'),
+    ('pM', '1e-320'),
+    ('eq', '1e-999'),
+  ]) {
+    test('out-of-range $point $unit retains failed condition in export', () {
+      final plan = generateGradient(
+        solveCalculation(input()),
+        GradientSpec(selectedSlot: 1, unit: unit, points: ['0', point]),
+      );
+      expect(plan.totals.validGroupCount, 1);
+      expect(plan.totals.failedGroupCount, 1);
+      final markdown = buildGradientMarkdown(plan);
+      final copied = buildGradientCopyText(plan);
+      expect(markdown, contains('条件 2 · $point $unit'));
+      expect(markdown, contains('**不可执行**'));
+      expect(markdown, contains('实际反应数：1'));
+      expect(copied, contains('条件 2：$point $unit'));
+      expect(copied, contains('未计入 1 个不可执行条件'));
+      expect(copied, contains(plan.groups.last.error!));
+      expect(plan.spec.points, ['0', point]);
+    });
+  }
+
   test('working-stock source and chosen diluent are retained in records', () {
     final original = input();
     final provenance = WorkingStockProvenance(

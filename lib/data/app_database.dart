@@ -257,6 +257,10 @@ class SqfliteDatabase implements AppDatabase {
     } on FormatException {
       // Old or corrupt snapshots must not make the result history unreadable.
       return null;
+    } on ArgumentError {
+      // Scientific unit validation can reject finite text whose conversion
+      // overflows or underflows. Preserve the stored result's legacy fallback.
+      return null;
     }
   }
 

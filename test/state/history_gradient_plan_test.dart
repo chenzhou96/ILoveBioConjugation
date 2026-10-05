@@ -250,4 +250,72 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  for (final size in [const Size(1366, 900), const Size(390, 844)]) {
+    for (final (unit, point) in [
+      ('M', '1e308'),
+      ('pM', '1e-320'),
+      ('eq', '1e-999'),
+    ]) {
+      testWidgets(
+        'history renders and copies out-of-range $point $unit at $size',
+        (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final source = gradientHistoryInput(singleStock: false);
+          final input = CalculationInputSnapshot(
+            reactionVolume: source.reactionVolume,
+            reactionVolumeUnit: source.reactionVolumeUnit,
+            ratioType: source.ratioType,
+            substrates: source.substrates,
+            gradient: GradientInputSnapshot(
+              selectedSlot: 1,
+              unit: unit,
+              points: ['0', point],
+            ),
+          );
+          final database = FakeDatabase()
+            ..records.add(gradientHistoryRecord(input));
+          final copied = <String>[];
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            (call) async {
+              if (call.method == 'Clipboard.setData') {
+                copied.add((call.arguments as Map)['text'] as String);
+              }
+              return null;
+            },
+          );
+          addTearDown(
+            () => tester.binding.defaultBinaryMessenger
+                .setMockMethodCallHandler(SystemChannels.platform, null),
+          );
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [appDatabaseProvider.overrideWithValue(database)],
+              child: const MaterialApp(home: HistoryDetailScreen(recordId: 1)),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.textContaining('$point $unit'), findsWidgets);
+          expect(find.text('2 个条件 × 1 次重复 · 1 组不可行'), findsOneWidget);
+          final copy = find.byKey(const ValueKey('history-gradient-copy'));
+          await tester.ensureVisible(copy);
+          await tester.tap(copy);
+          await tester.pumpAndSettle();
+          expect(copied.single, contains('条件 2：$point $unit'));
+          expect(copied.single, contains('未计入 1 个不可执行条件'));
+          final actions = tester.widget<RecordActions>(
+            find.byType(RecordActions),
+          );
+          expect(actions.buildMarkdown(), contains('条件 2 · $point $unit'));
+          expect(database.saveRequests, isEmpty);
+          expect(input.gradient!.points, ['0', point]);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
 }

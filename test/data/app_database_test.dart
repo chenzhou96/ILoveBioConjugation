@@ -183,6 +183,106 @@ void main() {
   });
 
   test(
+    'out-of-range recipe snapshots do not hide other history rows',
+    () async {
+      final parent = {
+        ...snapshot.substrates.first.toJson(),
+        'storageConc': '10',
+        'storageUnit': 'M',
+        'mw': '500',
+        'mwUnit': 'Da',
+      };
+      final recipe = {
+        'slot': 0,
+        'parentInput': parent,
+        'workingConcentration': '2',
+        'workingUnit': 'M',
+        'dilutionFactor': 5,
+        'parentVolumeMl': .001,
+        'diluentVolumeMl': .004,
+        'preparationVolumeMl': .005,
+        'requiredVolumeMl': .002,
+        'newAliquotMl': .001,
+        'minimumVolumeMl': .001,
+        'diluentName': 'PBS',
+      };
+      final good = {
+        ...snapshot.toJson(),
+        'substrates': [
+          {...parent, 'storageConc': '2'},
+        ],
+        'workingStocks': [recipe],
+      };
+      final brokenId = await save(
+        inputs: CalculationInputSnapshot.fromJson(good),
+      );
+      final healthyId = await save(inputs: snapshot);
+      final corruptions = [
+        {
+          ...good,
+          'workingStocks': [
+            {
+              ...recipe,
+              'parentInput': {...parent, 'storageConc': '1e308'},
+            },
+          ],
+        },
+        {
+          ...good,
+          'workingStocks': [
+            {...recipe, 'workingConcentration': '1e308'},
+          ],
+        },
+        {
+          ...good,
+          'substrates': [
+            {...parent, 'storageConc': '1e308'},
+          ],
+        },
+        {
+          ...good,
+          'workingStocks': [
+            {
+              ...recipe,
+              'parentInput': {
+                ...parent,
+                'storageConc': '1e-320',
+                'storageUnit': 'pM',
+              },
+            },
+          ],
+        },
+        {
+          ...good,
+          'workingStocks': [
+            {
+              ...recipe,
+              'parentInput': {...parent, 'storageConc': '1e-999'},
+            },
+          ],
+        },
+      ];
+      for (final corrupted in corruptions) {
+        await database.db.update(
+          'calculation_history',
+          {'input_snapshot': jsonEncode(corrupted)},
+          where: 'id = ?',
+          whereArgs: [brokenId],
+        );
+        final records = await database.getHistory();
+        expect(records.map((record) => record.id), [healthyId, brokenId]);
+        expect(records.first.inputSnapshot!.toJson(), snapshot.toJson());
+        expect(records.last.inputSnapshot, isNull);
+        expect(
+          records.last.substrates.single.storageConcMolar,
+          main.storageConcMolar,
+        );
+        expect(records.last.substrates.single.name, 'trace stock');
+      }
+    },
+  );
+
+  test(
     'planning batch metadata uses existing JSON column and corrupt recipes fall back safely',
     () async {
       const input = SubstrateInputSnapshot(

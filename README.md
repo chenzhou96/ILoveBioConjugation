@@ -92,6 +92,12 @@ flutter test
 dart run test/run_verification.dart
 ```
 
+### 自动验证
+
+GitHub Actions 的 `Flutter validation` 在工作分支、`master` 推送及面向 `master` 的 PR 上运行相同的 Linux 检查：格式、静态分析、完整单元/组件测试、独立数值验证、真实 CJK 字体截图流程及主入口 Dart kernel 编译。Flutter 固定为 3.44.0，依赖遵循已提交的锁文件；工作流仅有读取源码权限，不发布或部署应用。
+
+截图步骤是界面流程/渲染检查，不是与固定图片逐像素比较的 golden 测试。CI 成功也不代表 Windows/macOS 原生安装、文件对话框、沙箱与签名已验证；发布前仍需以下目标平台检查。
+
 Windows 发布构建需在具备 Visual Studio C++ 桌面开发工具链的 Windows 环境运行：
 
 ```powershell

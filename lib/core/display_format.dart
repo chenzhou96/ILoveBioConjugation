@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'unit_converter.dart';
+import 'validators.dart';
 
 /// Presentation only: never feed rounded strings back into a calculation.
 String displayNumber(double value) {
@@ -72,30 +73,44 @@ String _scaled(
 
 /// Format a numeric input for reading/export without altering the saved input.
 String displayInputNumber(String text) {
-  final value = double.tryParse(text);
-  return value == null || !value.isFinite ? text : displayNumber(value);
+  final value = _parseDisplayInput(text);
+  return value == null ? text : displayNumber(value);
 }
 
 String displayInputValue(String text, String unit) {
-  final value = double.tryParse(text);
-  if (value == null || !value.isFinite) return '$text $unit';
+  final value = _parseDisplayInput(text);
+  if (value == null) return '$text $unit';
   final normalized = unit.replaceAll('µ', 'u');
-  double base(int exponent) => value * math.pow(10, exponent);
+  final exponent =
+      UnitConverter.volumeUnits[normalized] ??
+      UnitConverter.molarConcUnits[normalized] ??
+      UnitConverter.massConcUnits[normalized] ??
+      UnitConverter.molecularUnits[normalized];
+  if (exponent == null) return '${displayNumber(value)} $unit';
+  final base = value * math.pow(10, exponent);
+  // Failed gradient drafts still need readable labels and exports. Never let
+  // display-only conversion throw or turn an unrepresentable nonzero into zero.
+  if (!base.isFinite || (value != 0 && base == 0)) return '$text $unit';
   if (UnitConverter.volumeUnits.containsKey(normalized)) {
-    return displayVolume(base(UnitConverter.volumeUnits[normalized]!));
+    return displayVolume(base);
   }
   if (UnitConverter.molarConcUnits.containsKey(normalized)) {
-    return displayMolar(base(UnitConverter.molarConcUnits[normalized]!));
+    return displayMolar(base);
   }
   if (UnitConverter.massConcUnits.containsKey(normalized)) {
-    return displayMass(base(UnitConverter.massConcUnits[normalized]!));
+    return displayMass(base);
   }
-  if (UnitConverter.molecularUnits.containsKey(normalized)) {
-    return displayMolecularWeight(
-      base(UnitConverter.molecularUnits[normalized]!),
-    );
+  return displayMolecularWeight(base);
+}
+
+double? _parseDisplayInput(String text) {
+  try {
+    return parseFloatOrNull(text);
+  } on ArgumentError {
+    // Includes malformed/nonfinite drafts and lexical underflow rejected by
+    // the solver. Keep the exact text available instead of a fabricated zero.
+    return null;
   }
-  return '${displayNumber(value)} $unit';
 }
 
 /// Fill only a missing basis in legacy records; existing stored values win.
