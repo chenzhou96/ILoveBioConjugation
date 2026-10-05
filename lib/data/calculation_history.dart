@@ -1,3 +1,5 @@
+import 'calculation_input_snapshot.dart';
+
 /// Data class for a saved calculation record.
 class CalculationHistory {
   final int? id;
@@ -8,6 +10,7 @@ class CalculationHistory {
   final double? totalStockVolume;
   final double? diluentVolume;
   final List<SubstrateResult> substrates;
+  final CalculationInputSnapshot? inputSnapshot;
 
   const CalculationHistory({
     this.id,
@@ -18,6 +21,7 @@ class CalculationHistory {
     this.totalStockVolume,
     this.diluentVolume,
     this.substrates = const [],
+    this.inputSnapshot,
   });
 }
 

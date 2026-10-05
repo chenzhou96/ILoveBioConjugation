@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ilovebioconjugation/data/app_database.dart';
 import 'package:ilovebioconjugation/data/substrate_template.dart';
 
-final templateListProvider = FutureProvider<List<SubstrateTemplate>>((ref) async {
+final templateListProvider = FutureProvider<List<SubstrateTemplate>>((
+  ref,
+) async {
   final db = ref.read(appDatabaseProvider);
   return db.getTemplates();
 });
@@ -23,18 +25,20 @@ class TemplateNotifier extends Notifier<List<SubstrateTemplate>?> {
   }) async {
     final db = ref.read(appDatabaseProvider);
     final now = DateTime.now().toIso8601String();
-    await db.saveTemplate(SubstrateTemplate(
-      name: name,
-      molecularWeight: molecularWeight,
-      mwUnit: mwUnit,
-      storageConcentration: storageConcentration,
-      storageUnit: storageUnit,
-      defaultFinalConc: defaultFinalConc,
-      defaultFinalUnit: defaultFinalUnit,
-      defaultReactionRatio: defaultReactionRatio,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await db.saveTemplate(
+      SubstrateTemplate(
+        name: name,
+        molecularWeight: molecularWeight,
+        mwUnit: mwUnit,
+        storageConcentration: storageConcentration,
+        storageUnit: storageUnit,
+        defaultFinalConc: defaultFinalConc,
+        defaultFinalUnit: defaultFinalUnit,
+        defaultReactionRatio: defaultReactionRatio,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     ref.invalidate(templateListProvider);
   }
 
@@ -47,5 +51,5 @@ class TemplateNotifier extends Notifier<List<SubstrateTemplate>?> {
 
 final templateNotifierProvider =
     NotifierProvider<TemplateNotifier, List<SubstrateTemplate>?>(
-  TemplateNotifier.new,
-);
+      TemplateNotifier.new,
+    );

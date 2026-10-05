@@ -4,87 +4,77 @@ import 'package:ilovebioconjugation/ui/calculator/state.dart';
 
 class ResultMetricsRow extends StatelessWidget {
   final ResultMetrics metrics;
-
-  const ResultMetricsRow({super.key, required this.metrics});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _MetricCard(
-          icon: Icons.science_outlined,
-          label: '最终反应体积',
-          value: metrics.totalVolume,
-          color: AppColors.primary,
-        ),
-        const SizedBox(width: 8),
-        _MetricCard(
-          icon: Icons.inventory_2_outlined,
-          label: '母液总体积',
-          value: metrics.stockVolume,
-          color: AppColors.secondaryBlue,
-        ),
-        const SizedBox(width: 8),
-        _MetricCard(
-          icon: Icons.water_drop_outlined,
-          label: '补加溶剂体积',
-          value: metrics.diluentVolume,
-          color: AppColors.success,
-        ),
-        const SizedBox(width: 8),
-        _MetricCard(
-          icon: Icons.biotech_outlined,
-          label: '启用底物数量',
-          value: metrics.substrateCount,
-          color: AppColors.accent,
-        ),
-      ],
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _MetricCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
+  final bool compact;
+  const ResultMetricsRow({
+    super.key,
+    required this.metrics,
+    this.compact = false,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final columns = compact || constraints.maxWidth >= 700
+          ? 4
+          : (constraints.maxWidth >= 280 ? 2 : 1);
+      final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
+      final entries = [
+        ('最终反应体积', metrics.totalVolume, Icons.science_outlined),
+        ('母液总体积', metrics.stockVolume, Icons.inventory_2_outlined),
+        ('补加溶剂体积', metrics.diluentVolume, Icons.water_drop_outlined),
+        ('参与反应底物', metrics.substrateCount, Icons.biotech_outlined),
+      ];
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: List.generate(entries.length, (index) {
+          final (label, value, icon) = entries[index];
+          return Container(
+            width: width,
+            padding: EdgeInsets.all(compact ? 8 : 14),
+            decoration: BoxDecoration(
+              color: index == 2
+                  ? AppColors.of(context).successBg
+                  : AppColors.of(context).surface,
+              border: Border.all(color: AppColors.of(context).border),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 10, color: AppColors.muted),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!compact)
+                  Icon(
+                    icon,
+                    size: 19,
+                    color: index == 2
+                        ? AppColors.of(context).successFg
+                        : AppColors.of(context).muted,
+                  ),
+                if (!compact) SizedBox(height: 10),
+                Text(
+                  value.replaceAll('uL', 'µL'),
+                  style: TextStyle(
+                    fontSize: compact ? 16 : 19,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
+                    color: index == 2
+                        ? AppColors.of(context).successFg
+                        : AppColors.of(context).text,
+                  ),
+                ),
+                SizedBox(height: compact ? 3 : 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: compact ? 10 : 11,
+                    color: AppColors.of(context).muted,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
+          );
+        }),
+      );
+    },
+  );
 }

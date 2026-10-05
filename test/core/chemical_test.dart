@@ -35,10 +35,7 @@ void main() {
     });
 
     test('throws if neither storage conc provided', () {
-      expect(
-        () => Chemical(unitCoefficient: 0),
-        throwsArgumentError,
-      );
+      expect(() => Chemical(unitCoefficient: 0), throwsArgumentError);
     });
 
     test('throws if both final conc types provided', () {
@@ -63,10 +60,7 @@ void main() {
         molecularWeight: 150000,
       );
       // conc_mass2molar = (10 / 150000) * 1000 = 0.06666666666666667
-      expect(
-        chem.storageConcMolar,
-        closeTo(0.06666666666666667, 1e-15),
-      );
+      expect(chem.storageConcMolar, closeTo(0.06666666666666667, 1e-15));
     });
 
     test('derives storage mass from molar when MW provided', () {
@@ -88,10 +82,7 @@ void main() {
         finalConcMass: 5,
         molecularWeight: 150000,
       );
-      expect(
-        chem.finalConcMolar,
-        closeTo(0.03333333333333333, 1e-15),
-      );
+      expect(chem.finalConcMolar, closeTo(0.03333333333333333, 1e-15));
     });
 
     test('derives final mass from molar when MW provided', () {
@@ -117,10 +108,7 @@ void main() {
       );
       chem.finalConcMolar = null;
       chem.outputTest();
-      expect(
-        chem.finalConcMolar,
-        closeTo(0.03333333333333333, 1e-15),
-      );
+      expect(chem.finalConcMolar, closeTo(0.03333333333333333, 1e-15));
     });
 
     test('re-derives missing storage concentrations', () {
@@ -132,10 +120,7 @@ void main() {
       );
       chem.storageConcMolar = null;
       chem.outputTest();
-      expect(
-        chem.storageConcMolar,
-        closeTo(0.06666666666666667, 1e-15),
-      );
+      expect(chem.storageConcMolar, closeTo(0.06666666666666667, 1e-15));
     });
   });
 
@@ -160,6 +145,69 @@ void main() {
       );
       expect(chem.getBasisConc(false), 10);
       expect(chem.getBasisFinalConc(false), 5);
+    });
+  });
+  group('Derived concentration consistency', () {
+    test(
+      'setting either basis refreshes its previously derived counterpart',
+      () {
+        final chem = Chemical(
+          unitCoefficient: 0,
+          storageConcMass: 10,
+          molecularWeight: 150000,
+          finalConcMass: 5,
+        );
+        chem.setBasisFinalConc(true, 0.01);
+        expect(chem.finalConcMolar, 0.01);
+        expect(chem.finalConcMass, 1.5);
+        chem.setBasisFinalConc(false, 3);
+        expect(chem.finalConcMolar, 0.02);
+        expect(chem.finalConcMass, 3);
+        chem.outputTest();
+        expect(chem.finalConcMolar, 0.02);
+      },
+    );
+    test('clearing a basis clears the derived counterpart', () {
+      final chem = Chemical(
+        unitCoefficient: 0,
+        storageConcMass: 10,
+        molecularWeight: 150000,
+        finalConcMass: 5,
+      );
+      chem.setBasisFinalConc(true, null);
+      expect(chem.finalConcMolar, isNull);
+      expect(chem.finalConcMass, isNull);
+    });
+    test(
+      'direct conflicting edits cannot silently preserve stale conversions',
+      () {
+        final chem = Chemical(
+          unitCoefficient: 0,
+          storageConcMass: 10,
+          molecularWeight: 150000,
+          finalConcMass: 5,
+        );
+        chem.finalConcMass = 4;
+        expect(chem.outputTest, throwsArgumentError);
+      },
+    );
+    test('invalid molecular weight cannot leave derived infinity or NaN', () {
+      expect(
+        () => Chemical(
+          unitCoefficient: 0,
+          storageConcMass: 1,
+          molecularWeight: 0,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => Chemical(
+          unitCoefficient: 0,
+          storageConcMolar: 1e308,
+          molecularWeight: 1e308,
+        ),
+        throwsArgumentError,
+      );
     });
   });
 }

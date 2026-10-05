@@ -12,6 +12,9 @@ class ChemicalFieldRow extends StatefulWidget {
   final double entryWidth;
   final String? hint;
   final bool readOnly;
+  final bool numeric;
+  final String? semanticLabel;
+  final bool compact;
 
   const ChemicalFieldRow({
     super.key,
@@ -24,6 +27,9 @@ class ChemicalFieldRow extends StatefulWidget {
     this.entryWidth = 80,
     this.hint,
     this.readOnly = false,
+    this.numeric = true,
+    this.semanticLabel,
+    this.compact = false,
   });
 
   @override
@@ -31,7 +37,8 @@ class ChemicalFieldRow extends StatefulWidget {
 }
 
 class _ChemicalFieldRowState extends State<ChemicalFieldRow> {
-  late TextEditingController _controller;
+  late final TextEditingController _controller;
+  bool _focused = false;
 
   @override
   void initState() {
@@ -42,9 +49,11 @@ class _ChemicalFieldRowState extends State<ChemicalFieldRow> {
   @override
   void didUpdateWidget(ChemicalFieldRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value != oldWidget.value && widget.value != _controller.text) {
-      _controller.text = widget.value;
-      _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
+    if (widget.value != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.value,
+        selection: TextSelection.collapsed(offset: widget.value.length),
+      );
     }
   }
 
@@ -56,43 +65,113 @@ class _ChemicalFieldRowState extends State<ChemicalFieldRow> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 70,
-            child: Text(
-              widget.label,
-              style: const TextStyle(fontSize: 11, color: AppColors.text),
+    if (widget.compact) {
+      return Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onFocusChange: (value) => setState(() => _focused = value),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.of(context).surface,
+            border: Border.all(
+              color: _focused
+                  ? AppColors.of(context).primary
+                  : AppColors.of(context).border,
             ),
+            borderRadius: BorderRadius.circular(6),
           ),
-          SizedBox(
-            width: widget.entryWidth,
-            height: 30,
-            child: TextField(
-              controller: _controller,
-              onChanged: widget.readOnly ? null : widget.onChanged,
-              readOnly: widget.readOnly,
-              style: const TextStyle(fontSize: 12),
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                hintStyle: const TextStyle(fontSize: 10, color: AppColors.muted),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                border: const OutlineInputBorder(),
-                isDense: true,
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  label: widget.semanticLabel ?? widget.label,
+                  child: TextField(
+                    controller: _controller,
+                    onChanged: widget.readOnly ? null : widget.onChanged,
+                    enabled: !widget.readOnly,
+                    keyboardType: widget.numeric
+                        ? const TextInputType.numberWithOptions(
+                            decimal: true,
+                            signed: true,
+                          )
+                        : TextInputType.text,
+                    textInputAction: TextInputAction.next,
+                    style: const TextStyle(fontSize: 12, height: 1.3),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 9,
+                      ),
+                      hintText: '—',
+                      hintStyle: TextStyle(fontSize: 11),
+                      filled: false,
+                      isDense: true,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              if (widget.unit != null && widget.unitValues != null)
+                UnitDropdown(
+                  value: widget.unit!,
+                  items: widget.unitValues!,
+                  enabled: !widget.readOnly,
+                  compact: true,
+                  attached: true,
+                  semanticLabel: '${widget.semanticLabel ?? widget.label}单位',
+                  onChanged: widget.onUnitChanged ?? (_) {},
+                ),
+            ],
           ),
-          if (widget.unit != null && widget.unitValues != null) ...[
-            const SizedBox(width: 4),
-            UnitDropdown(
-              value: widget.unit!,
-              items: widget.unitValues!,
-              onChanged: widget.onUnitChanged ?? (_) {},
-            ),
-          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.label,
+            style: TextStyle(fontSize: 12, color: AppColors.of(context).muted),
+          ),
+          SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  label: widget.semanticLabel ?? widget.label,
+                  child: TextField(
+                    controller: _controller,
+                    onChanged: widget.readOnly ? null : widget.onChanged,
+                    enabled: !widget.readOnly,
+                    keyboardType: widget.numeric
+                        ? TextInputType.numberWithOptions(
+                            decimal: true,
+                            signed: true,
+                          )
+                        : TextInputType.text,
+                    textInputAction: TextInputAction.next,
+                    style: TextStyle(fontSize: 13),
+                    decoration: InputDecoration(hintText: widget.hint),
+                  ),
+                ),
+              ),
+              if (widget.unit != null && widget.unitValues != null) ...[
+                SizedBox(width: 8),
+                UnitDropdown(
+                  value: widget.unit!,
+                  items: widget.unitValues!,
+                  enabled: !widget.readOnly,
+                  semanticLabel: '${widget.semanticLabel ?? widget.label}单位',
+                  onChanged: widget.onUnitChanged ?? (_) {},
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );

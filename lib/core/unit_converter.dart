@@ -9,8 +9,8 @@ class UnitConverter {
     'kg': 6,
     'mg': 0,
     'ug': -3,
-    'ng': -9,
-    'pg': -12,
+    'ng': -6,
+    'pg': -9,
   };
 
   static const Map<String, int> volumeUnits = {
@@ -29,10 +29,7 @@ class UnitConverter {
     'pmol': -6,
   };
 
-  static const Map<String, int> molecularUnits = {
-    'Da': 0,
-    'kDa': 3,
-  };
+  static const Map<String, int> molecularUnits = {'Da': 0, 'kDa': 3};
 
   static const Map<String, int> molarConcUnits = {
     'M': 3,

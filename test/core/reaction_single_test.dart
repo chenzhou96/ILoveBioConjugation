@@ -92,10 +92,7 @@ void main() {
         storageConcVolume: 1,
         finalConcMolar: 10,
       );
-      final rxn = Reaction(
-        ratioType: true,
-        substrateMain: chem,
-      );
+      final rxn = Reaction(ratioType: true, substrateMain: chem);
       // d = 100 * 1 / 10 = 10
       expect(rxn.reactionVolume, closeTo(10.0, 1e-12));
     });
@@ -108,10 +105,7 @@ void main() {
         storageConcVolume: 2,
         finalConcMass: 5,
       );
-      final rxn = Reaction(
-        ratioType: false,
-        substrateMain: chem,
-      );
+      final rxn = Reaction(ratioType: false, substrateMain: chem);
       expect(rxn.reactionVolume, closeTo(4.0, 1e-12));
       expect(chem.reactionRatio, 1.0);
     });
