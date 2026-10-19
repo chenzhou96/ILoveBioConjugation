@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ilovebioconjugation/core/planning.dart';
 import 'package:ilovebioconjugation/core/display_format.dart';
+import 'package:ilovebioconjugation/core/validators.dart';
 import 'package:ilovebioconjugation/export/experiment_markdown.dart';
 import 'package:ilovebioconjugation/theme/app_colors.dart';
 import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
@@ -89,8 +90,8 @@ class _GradientDialogState extends ConsumerState<GradientDialog>
 
   void _generatePoints() {
     try {
-      final start = double.tryParse(_start.text.trim());
-      final step = double.tryParse(_step.text.trim());
+      final start = parseFloatOrNull(_start.text);
+      final step = parseFloatOrNull(_step.text);
       final count = int.tryParse(_count.text.trim());
       if (start == null || step == null || count == null) {
         throw ArgumentError('起点、步长 / 倍数和整数点数不能为空');

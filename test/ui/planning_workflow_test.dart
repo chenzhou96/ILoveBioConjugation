@@ -616,6 +616,47 @@ void main() {
     });
   }
 
+  for (final field in ['gradient-start', 'gradient-step-or-factor']) {
+    testWidgets('arithmetic generator rejects lexical underflow in $field', (
+      tester,
+    ) async {
+      final container = await _pumpWorkspace(tester);
+      await _tap(tester, _key('calculate-button'));
+      await _tap(tester, _key('gradient-planning-button'));
+      await _tap(tester, _key('gradient-generator'));
+      await _tap(tester, find.text('等差生成').last);
+      final original = tester
+          .widget<TextField>(_key('gradient-values'))
+          .controller!
+          .text;
+      await _enter(tester, _key(field), '1e-999');
+      await _enter(tester, _key('gradient-count'), '2');
+      await _tap(tester, _key('gradient-generate-points'));
+      expect(find.textContaining('不能将非零输入当作零'), findsOneWidget);
+      expect(
+        tester.widget<TextField>(_key('gradient-values')).controller!.text,
+        original,
+      );
+      expect(container.read(calculatorProvider).gradientPlan, isNull);
+      await _enter(tester, _key(field), '0e-999');
+      await _tap(tester, _key('gradient-generate-points'));
+      expect(
+        tester.widget<TextField>(_key('gradient-values')).controller!.text,
+        field == 'gradient-start' ? '0.0, 1.0' : '1.0, 1.0',
+      );
+      await _tap(tester, _key('gradient-generate'));
+      expect(
+        container
+            .read(calculatorProvider)
+            .gradientPlan!
+            .totals
+            .failedGroupCount,
+        0,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets(
     'gradient validates replicates, extra percentage and geometric controls',
     (tester) async {
