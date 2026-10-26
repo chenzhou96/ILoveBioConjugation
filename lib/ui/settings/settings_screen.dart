@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ilovebioconjugation/core/validators.dart';
 import 'package:ilovebioconjugation/theme/app_colors.dart';
 import 'package:ilovebioconjugation/ui/calculator/state.dart';
 import 'package:ilovebioconjugation/ui/calculator/widgets/status_banner.dart';
@@ -296,7 +297,13 @@ class _PipettingSettingState extends ConsumerState<_PipettingSetting> {
   }
 
   void _save() {
-    final value = double.tryParse(_controller.text.trim());
+    double? value;
+    try {
+      value = parseFloatOrNull(_controller.text);
+    } on ArgumentError {
+      setState(() => _error = '请输入大于或等于 0 的有限数字');
+      return;
+    }
     if (value == null || !value.isFinite || value < 0) {
       setState(() => _error = '请输入大于或等于 0 的有限数字');
       return;

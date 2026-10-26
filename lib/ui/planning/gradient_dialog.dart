@@ -108,7 +108,13 @@ class _GradientDialogState extends ConsumerState<GradientDialog>
 
   void _generate() {
     final replicates = int.tryParse(_replicates.text.trim());
-    final extra = double.tryParse(_extra.text.trim());
+    double? extra;
+    try {
+      extra = parseFloatOrNull(_extra.text);
+    } on ArgumentError {
+      setState(() => _error = '重复数须为正整数；额外配制比例须为大于或等于 0 的有限数字');
+      return;
+    }
     if (replicates == null ||
         replicates <= 0 ||
         extra == null ||
