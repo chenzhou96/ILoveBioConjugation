@@ -616,6 +616,117 @@ void main() {
     });
   }
 
+  for (final field in ['gradient-start', 'gradient-step-or-factor']) {
+    testWidgets('arithmetic generator rejects lexical underflow in $field', (
+      tester,
+    ) async {
+      final container = await _pumpWorkspace(tester);
+      await _tap(tester, _key('calculate-button'));
+      await _tap(tester, _key('gradient-planning-button'));
+      await _tap(tester, _key('gradient-generator'));
+      await _tap(tester, find.text('等差生成').last);
+      final original = tester
+          .widget<TextField>(_key('gradient-values'))
+          .controller!
+          .text;
+      await _enter(tester, _key(field), '1e-999');
+      await _enter(tester, _key('gradient-count'), '2');
+      await _tap(tester, _key('gradient-generate-points'));
+      expect(find.textContaining('不能将非零输入当作零'), findsOneWidget);
+      expect(
+        tester.widget<TextField>(_key('gradient-values')).controller!.text,
+        original,
+      );
+      expect(container.read(calculatorProvider).gradientPlan, isNull);
+      await _enter(tester, _key(field), '0e-999');
+      await _tap(tester, _key('gradient-generate-points'));
+      expect(
+        tester.widget<TextField>(_key('gradient-values')).controller!.text,
+        field == 'gradient-start' ? '0.0, 1.0' : '1.0, 1.0',
+      );
+      await _tap(tester, _key('gradient-generate'));
+      expect(
+        container
+            .read(calculatorProvider)
+            .gradientPlan!
+            .totals
+            .failedGroupCount,
+        0,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('gradient extra rejects lexical underflow before planning', (
+    tester,
+  ) async {
+    final container = await _pumpWorkspace(tester);
+    await _tap(tester, _key('calculate-button'));
+    final baseline = container.read(calculatorProvider).rawResult!;
+    await _tap(tester, _key('gradient-planning-button'));
+    for (final invalid in ['1e-999', '-1e-999']) {
+      await _enter(tester, _key('gradient-extra'), invalid);
+      await _tap(tester, _key('gradient-generate'));
+      expect(find.textContaining('额外配制比例须'), findsOneWidget);
+      expect(container.read(calculatorProvider).gradientPlan, isNull);
+      expect(container.read(calculatorProvider).gradientSpec, isNull);
+      expect(container.read(calculatorProvider).rawResult, same(baseline));
+      expect(
+        tester.widget<TextField>(_key('gradient-extra')).controller!.text,
+        invalid,
+      );
+    }
+    await _enter(tester, _key('gradient-extra'), '0e-999');
+    await _tap(tester, _key('gradient-generate'));
+    expect(
+      container
+          .read(calculatorProvider)
+          .gradientPlan!
+          .spec
+          .extraPreparationFraction,
+      0,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('working-stock extra rejects lexical underflow before preview', (
+    tester,
+  ) async {
+    final container = await _pumpWorkspace(tester);
+    await _tap(tester, _key('calculate-button'));
+    final baseline = container.read(calculatorProvider).rawResult!;
+    await _tap(tester, _key('low-volume-1'));
+    await _enter(tester, _key('working-stock-diluent'), 'PBS');
+    for (final invalid in ['1e-999', '-1e-999']) {
+      await _enter(tester, _key('working-stock-extra'), invalid);
+      await _tap(tester, _key('working-stock-preview'));
+      expect(find.textContaining('额外配制比例须'), findsOneWidget);
+      expect(
+        tester.widget<FilledButton>(_key('working-stock-adopt')).onPressed,
+        isNull,
+      );
+      expect(container.read(calculatorProvider).workingStocks, isEmpty);
+      expect(container.read(calculatorProvider).rawResult, same(baseline));
+      expect(
+        tester.widget<TextField>(_key('working-stock-extra')).controller!.text,
+        invalid,
+      );
+    }
+    await _enter(tester, _key('working-stock-extra'), '0e-999');
+    await _tap(tester, _key('working-stock-preview'));
+    expect(
+      tester.widget<FilledButton>(_key('working-stock-adopt')).onPressed,
+      isNotNull,
+    );
+    await _tap(tester, _key('working-stock-adopt'));
+    final recipe = container.read(calculatorProvider).workingStocks.single;
+    // Automatic 10× dilution needs at least 1 µL of parent stock: 10 µL
+    // prepared, even though this reaction only needs 1 µL of working stock.
+    expect(recipe.preparationVolumeMl, closeTo(0.01, 1e-12));
+    expect(recipe.requiredVolumeMl, closeTo(0.001, 1e-12));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'gradient validates replicates, extra percentage and geometric controls',
     (tester) async {
@@ -1033,6 +1144,42 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('pipetting threshold rejects lexical underflow before saving', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(390, 844));
+    final store = _MemorySettingsStore();
+    final container = ProviderContainer(
+      overrides: [appSettingsStoreProvider.overrideWithValue(store)],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: AppTheme.light, home: const SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = _key('minimum-pipetting-setting');
+    for (final invalid in ['1e-999', '-1e-999']) {
+      await _enter(tester, field, invalid);
+      await _tap(tester, find.text('保存阈值'));
+      expect(find.text('请输入大于或等于 0 的有限数字'), findsOneWidget);
+      expect(container.read(appSettingsProvider).minimumPipettingVolumeUl, 1);
+      expect(store.saved, isNull);
+      expect(tester.widget<TextField>(field).controller!.text, invalid);
+    }
+    await _enter(tester, field, '0e-999');
+    await _tap(tester, find.text('保存阈值'));
+    expect(store.saved!.minimumPipettingVolumeUl, 0);
+    expect(find.text('请输入大于或等于 0 的有限数字'), findsNothing);
+    await _enter(tester, field, '2.5');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(store.saved!.minimumPipettingVolumeUl, 2.5);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'invalid pipetting thresholds preserve saved setting; zero disables',

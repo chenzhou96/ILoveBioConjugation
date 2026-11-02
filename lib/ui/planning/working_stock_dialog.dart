@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ilovebioconjugation/core/planning.dart';
+import 'package:ilovebioconjugation/core/validators.dart';
 import 'package:ilovebioconjugation/theme/app_colors.dart';
 import 'package:ilovebioconjugation/ui/calculator/calculator_notifier.dart';
 import 'package:ilovebioconjugation/ui/settings/app_settings.dart';
@@ -42,7 +43,13 @@ class _WorkingStockDialogState extends ConsumerState<WorkingStockDialog> {
     final factor = _factor.text.trim().isEmpty
         ? null
         : double.tryParse(_factor.text.trim());
-    final extra = double.tryParse(_extra.text.trim());
+    double? extra;
+    try {
+      extra = parseFloatOrNull(_extra.text);
+    } on ArgumentError {
+      setState(() => _error = '稀释倍数须为大于或等于 1 的有限数字；额外配制比例须大于或等于 0');
+      return;
+    }
     if (_diluent.text.trim().isEmpty) {
       setState(() => _error = '请指定实际使用的稀释液');
       return;
